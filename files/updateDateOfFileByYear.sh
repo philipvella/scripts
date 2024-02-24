@@ -4,12 +4,17 @@
 # This script updates the modification and access times of files in a directory
 # to a new date if the modification date is greater than a target date.
 
-# Directory to process
-TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year/2023"
+# Year variable
+YEAR="2023"
 
-# Target and new modification dates in format YYYYMMDDHHMM.SS
-TARGET_DATE="202402220000.00"
-NEW_DATE="202301010000.00"
+# Directory to process, incorporating the year variable
+TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year/${YEAR}"
+
+# Assuming the target date to check against is the end of the specified year,
+# and setting the new modification date to the start of that year.
+# Adjust these dates if the logic is meant to be different.
+TARGET_DATE="${YEAR}12312359.59"
+NEW_DATE="${YEAR}01010000.00"
 
 # Find command to iterate over files
 find "${TARGET_DIR}" -type f -print0 | while IFS= read -r -d $'\0' file; do
