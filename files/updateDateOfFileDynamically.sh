@@ -5,7 +5,7 @@
 # to match the content creation or modification date of the file.
 
 # Directory to process
-TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year/2021"
+TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year"
 
 
 # Find command to iterate over files
