@@ -5,7 +5,7 @@
 # to a new date if the modification date is greater than a target date.
 
 # Year variable
-YEAR="2023"
+YEAR="2015"
 
 # Directory to process, incorporating the year variable
 TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year/${YEAR}"
