@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # DESCRIPTION
-# This script updates the access and modification times of files in the target directory
-# to match the content creation or modification date of the file.
+# This script updates the modification and access times of files in a directory
+# to a new date if the modification date is greater than a target date.
 
 # Directory to process
-TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos/by-year"
-
+TARGET_DIR="/Users/philipvella/Downloads/GooglePhotos"
 
 # Find command to iterate over files
 find "${TARGET_DIR}" -type f -print0 | while IFS= read -r -d $'\0' file; do
@@ -14,17 +13,32 @@ find "${TARGET_DIR}" -type f -print0 | while IFS= read -r -d $'\0' file; do
     creationDate=$(stat -f "%SB" -t "%Y%m%d%H%M.%S" "$file")
     modificationDate=$(stat -f "%Sm" -t "%Y%m%d%H%M.%S" "$file")
 
-    # Prefer creation date if available, otherwise use modification date
-    preferredDate="${creationDate:-$modificationDate}"
+    # Get the interesting date using mdls
+    interestingDate=$(mdls -name kMDItemContentCreationDate -raw "$file" | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S %z" "{}" "+%Y%m%d%H%M.%S")
 
-    # Convert preferredDate to timestamp format for comparison
-    preferredTimestamp=$(date -j -f "%Y%m%d%H%M.%S" "$preferredDate" "+%s")
+    # Convert dates to timestamps for comparison
+    creationTimestamp=$(date -j -f "%Y%m%d%H%M.%S" "$creationDate" "+%s")
+    modificationTimestamp=$(date -j -f "%Y%m%d%H%M.%S" "$modificationDate" "+%s")
+    interestingTimestamp=$(date -j -f "%Y%m%d%H%M.%S" "$interestingDate" "+%s" 2>/dev/null || echo "")
+
+    # Find the smallest timestamp to use as the preferred date
+    minTimestamp="$creationTimestamp"
+    preferredDate="$creationDate"
+
+    if [ ! -z "$interestingTimestamp" ] && [ "$interestingTimestamp" -lt "$minTimestamp" ]; then
+        minTimestamp="$interestingTimestamp"
+        preferredDate="$interestingDate"
+    fi
+
+    if [ "$modificationTimestamp" -lt "$minTimestamp" ]; then
+        preferredDate="$modificationDate"
+    fi
 
     # Get current modification timestamp of the file
     currentModTimestamp=$(stat -f "%m" "$file")
 
     # Compare if the file's modification timestamp matches the preferred timestamp
-    if [ "$preferredTimestamp" -ne "$currentModTimestamp" ]; then
+    if [ "$(date -j -f "%Y%m%d%H%M.%S" "$preferredDate" "+%s")" -ne "$currentModTimestamp" ]; then
         # Update the file's access and modification times if different
         touch -t "$preferredDate" "$file"
 
