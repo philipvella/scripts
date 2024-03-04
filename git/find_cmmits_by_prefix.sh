@@ -8,7 +8,7 @@ fi
 
 PATTERN=$1
 
-cd ~/work/kingmakers-frontend/
+cd /Users/philipvella/work/cloudflare-workers
 
 # Extract tasks, remove duplicates while preserving order, then reverse the output using tail -r for macOS.
 git log --grep="$PATTERN" --pretty=format:"%B" |
