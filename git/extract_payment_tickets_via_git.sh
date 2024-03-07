@@ -1,11 +1,14 @@
 #!/bin/bash
 
 # Define the old and new product versions
-OLD_PROD=a05faaf46d6e5c2f039fa29a6ba2d639e2f24b0a
-NEW_PROD=22e3b870be90d87f05376a351358f2e4804be120
+OLD_PROD=c662718b96b07c062194df18dd5cbff8230d5007
+NEW_PROD=4c9d2a97fe022b323930580af3caa71f6eafd58b
 
 # Change the current directory to the kingmakers-frontend directory
-cd ~/work/kingmakers-frontend/
+cd ~/work/OTHER/kingmakers-frontend
+
+git fetch
+git pull
 
 # Use git log to get the commit messages between the old and new product versions
 # Filter these messages to only include those that contain 'PAY-'
