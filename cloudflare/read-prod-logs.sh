@@ -18,6 +18,11 @@ MY_DEPLOYMENT_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts
   -H "Authorization: Bearer ${MY_CLOUDFLARE_API_TOKEN}" \
   | jq -r '.result[] | select(.environment == "production") | .id' | head -n 1)
 
+# if MY_DEPLOYMENT_ID is empty, set it to or default to d25686c1-c744-4d55-884a-a0fafef9b165
+if [ -z "$MY_DEPLOYMENT_ID" ]; then
+  MY_DEPLOYMENT_ID="d25686c1-c744-4d55-884a-a0fafef9b165"
+fi
+
 if [ -z "$MY_DEPLOYMENT_ID" ]; then
   echo "❌ No production deployment found for project '$MY_PROJECT_NAME'."
   exit 1
