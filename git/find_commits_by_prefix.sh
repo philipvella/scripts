@@ -7,7 +7,7 @@
 #fi
 
 #PATTERN=$1
-PATTERN=1953
+PATTERN=7134
 
 cd ~/work/kingmakers-frontend
 
