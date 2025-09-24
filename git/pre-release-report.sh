@@ -1,31 +1,78 @@
 #!/bin/bash
 
 # repository: https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend
-# UAT commit hash 5afd67036559e24f6481896a0b3a8f249c262d5c
-# PROD commit hash 8a6052ea57e5d71d570490c956586664efde9275
-# path to check for diffs: src/apps/islands-tailwind
+# Usage: ./pre-release-report.sh --repo-path <path> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]
+
+# Initialize variables
+DEBUG_MODE=false
+REPO_PATH=""
+UAT_HASH=""
+PROD_HASH=""
+PATH_TO_CHECK=""
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 --repo-path <path> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]"
+    echo ""
+    echo "Required arguments:"
+    echo "  --repo-path <path>       Path to the git repository"
+    echo "  --uat-hash <hash>        UAT commit hash"
+    echo "  --prod-hash <hash>       PROD commit hash"
+    echo "  --path-to-check <path>   Path within repo to check for diffs"
+    echo ""
+    echo "Optional arguments:"
+    echo "  --debug                  Enable debug output"
+    echo "  --help                   Show this help message"
+    echo ""
+    echo "Example:"
+    echo "  $0 --repo-path ~/work/kingmakers-frontend --uat-hash 5afd67036559e24f6481896a0b3a8f249c262d5c --prod-hash 8a6052ea57e5d71d570490c956586664efde9275 --path-to-check apps/islands-tailwind"
+}
 
 # Parse command line arguments
-DEBUG_MODE=false
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --repo-path)
+            REPO_PATH="$2"
+            shift 2
+            ;;
+        --uat-hash)
+            UAT_HASH="$2"
+            shift 2
+            ;;
+        --prod-hash)
+            PROD_HASH="$2"
+            shift 2
+            ;;
+        --path-to-check)
+            PATH_TO_CHECK="$2"
+            shift 2
+            ;;
         --debug)
             DEBUG_MODE=true
             shift
             ;;
+        --help)
+            show_usage
+            exit 0
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--debug]"
+            show_usage
             exit 1
             ;;
     esac
 done
 
-# Set variables
-REPO_PATH="/Users/philipvella/work/kingmakers-frontend"
-UAT_HASH="5afd67036559e24f6481896a0b3a8f249c262d5c"
-PROD_HASH="8a6052ea57e5d71d570490c956586664efde9275"
-PATH_TO_CHECK="apps/islands-tailwind"
+# Validate required arguments
+if [[ -z "$REPO_PATH" || -z "$UAT_HASH" || -z "$PROD_HASH" || -z "$PATH_TO_CHECK" ]]; then
+    echo "Error: Missing required arguments"
+    echo ""
+    show_usage
+    exit 1
+fi
+
+# Expand tilde in REPO_PATH
+REPO_PATH="${REPO_PATH/#\~/$HOME}"
 
 # Create output file with timestamp
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
@@ -219,12 +266,12 @@ echo ""
 
 # Key changes (PRs)
 echo "## 🔗 Pull Requests"
-git log --oneline --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | while IFS= read -r line; do
-    pr_number=$(echo "$line" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
+git log --pretty=format:"%H|%s|%cn" --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | while IFS='|' read -r commit_hash commit_msg committer_name; do
+    pr_number=$(echo "$commit_msg" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
     if [[ -n "$pr_number" ]]; then
         # Clean up the commit message for Markdown
-        clean_msg=$(echo "$line" | sed 's/^[* |\\]*[a-f0-9]* //' | sed 's/Merged PR [0-9]*: //')
-        echo "- [PR #$pr_number](https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number): $clean_msg"
+        clean_msg=$(echo "$commit_msg" | sed 's/^[* |\\]*[a-f0-9]* //' | sed 's/Merged PR [0-9]*: //')
+        echo "- [$clean_msg ($committer_name)](https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number)"
     fi
 done
 echo ""
