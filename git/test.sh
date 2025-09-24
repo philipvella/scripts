@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# repository: https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend
+# UAT commit hash 5afd67036559e24f6481896a0b3a8f249c262d5c
+# PROD commit hash 8a6052ea57e5d71d570490c956586664efde9275
+# path to check for diffs: src/apps/islands-tailwind
+
+# Parse command line arguments
+DEBUG_MODE=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --debug)
+            DEBUG_MODE=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--debug]"
+            exit 1
+            ;;
+    esac
+done
+
+# Set variables
+REPO_PATH="/Users/philipvella/work/kingmakers-frontend"
+UAT_HASH="5afd67036559e24f6481896a0b3a8f249c262d5c"
+PROD_HASH="8a6052ea57e5d71d570490c956586664efde9275"
+PATH_TO_CHECK="apps/islands-tailwind"
+
+# Create output file with timestamp
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+OUTPUT_FILE="/Users/philipvella/work/scripts/git/commit_analysis_${TIMESTAMP}.txt"
+
+# Function to output both to terminal and file
+output() {
+    echo "$1" | tee -a "$OUTPUT_FILE"
+}
+
+# Function to output debug information only if debug mode is enabled
+debug_output() {
+    if [ "$DEBUG_MODE" = true ]; then
+        echo "$1" >> "$OUTPUT_FILE"
+    fi
+}
+
+# Initialize output file
+echo "Git Commit Analysis Report" > "$OUTPUT_FILE"
+echo "Generated on: $(date)" >> "$OUTPUT_FILE"
+if [ "$DEBUG_MODE" = true ]; then
+    echo "Debug mode: ENABLED" >> "$OUTPUT_FILE"
+fi
+echo "======================================" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Change to the repository directory
+cd "$REPO_PATH" || { echo "Error: Could not change to repository directory $REPO_PATH"; exit 1; }
+
+# Debug: Check if we're in a git repository
+debug_output "DEBUG: Checking git repository status..."
+debug_output "DEBUG: Current directory: $(pwd)"
+debug_output "DEBUG: Git status:"
+if [ "$DEBUG_MODE" = true ]; then
+    git status --porcelain >> "$OUTPUT_FILE" 2>&1
+fi
+debug_output "DEBUG: Git remote -v:"
+if [ "$DEBUG_MODE" = true ]; then
+    git remote -v >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Check if the commit hashes exist
+debug_output "DEBUG: Checking if commit hashes exist..."
+debug_output "DEBUG: Checking PROD hash ($PROD_HASH):"
+if [ "$DEBUG_MODE" = true ]; then
+    git cat-file -t "$PROD_HASH" >> "$OUTPUT_FILE" 2>&1
+fi
+debug_output "DEBUG: Checking UAT hash ($UAT_HASH):"
+if [ "$DEBUG_MODE" = true ]; then
+    git cat-file -t "$UAT_HASH" >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Check if the path exists
+debug_output "DEBUG: Checking if path exists..."
+debug_output "DEBUG: ls -la $PATH_TO_CHECK:"
+if [ "$DEBUG_MODE" = true ]; then
+    ls -la "$PATH_TO_CHECK" >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Test basic git log without path restriction
+debug_output "DEBUG: Testing basic git log between commits (no path restriction):"
+if [ "$DEBUG_MODE" = true ]; then
+    git log --oneline "$PROD_HASH..$UAT_HASH" | head -10 >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Test git log with path restriction
+debug_output "DEBUG: Testing git log with path restriction:"
+if [ "$DEBUG_MODE" = true ]; then
+    git log --oneline "$PROD_HASH..$UAT_HASH" -- "$PATH_TO_CHECK" | head -10 >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Try reverse order (UAT..PROD instead of PROD..UAT)
+debug_output "DEBUG: Testing reverse commit range (UAT..PROD):"
+if [ "$DEBUG_MODE" = true ]; then
+    git log --oneline "$UAT_HASH..$PROD_HASH" -- "$PATH_TO_CHECK" | head -10 >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+# Debug: Check if there are any commits at all in the path
+debug_output "DEBUG: Recent commits in the path (last 10):"
+if [ "$DEBUG_MODE" = true ]; then
+    git log --oneline -10 -- "$PATH_TO_CHECK" >> "$OUTPUT_FILE" 2>&1
+    echo "" >> "$OUTPUT_FILE"
+fi
+
+{
+echo "=== Analyzing commits between PROD and UAT ==="
+echo "Repository Path: $REPO_PATH"
+echo "PROD: $PROD_HASH"
+echo "UAT: $UAT_HASH"
+echo "Path: $PATH_TO_CHECK"
+echo ""
+
+# Debug output for commit range
+if [ "$DEBUG_MODE" = true ]; then
+    echo "DEBUG: Using commit range: $PROD_HASH..$UAT_HASH"
+    echo "DEBUG: Checking if there are any commits in this range..."
+    COMMIT_COUNT=$(git rev-list --count "$PROD_HASH..$UAT_HASH" -- "$PATH_TO_CHECK" 2>/dev/null || echo "0")
+    echo "DEBUG: Found $COMMIT_COUNT commits in range with path restriction"
+    COMMIT_COUNT_NO_PATH=$(git rev-list --count "$PROD_HASH..$UAT_HASH" 2>/dev/null || echo "0")
+    echo "DEBUG: Found $COMMIT_COUNT_NO_PATH commits in range without path restriction"
+    echo ""
+
+    # Try reverse range if forward range is empty
+    if [ "$COMMIT_COUNT" -eq 0 ]; then
+        echo "DEBUG: Forward range is empty, trying reverse range..."
+        REVERSE_COUNT=$(git rev-list --count "$UAT_HASH..$PROD_HASH" -- "$PATH_TO_CHECK" 2>/dev/null || echo "0")
+        echo "DEBUG: Found $REVERSE_COUNT commits in reverse range"
+        if [ "$REVERSE_COUNT" -gt 0 ]; then
+            echo "DEBUG: Using reverse range instead!"
+            TEMP_HASH="$PROD_HASH"
+            PROD_HASH="$UAT_HASH"
+            UAT_HASH="$TEMP_HASH"
+            echo "DEBUG: Swapped hashes - now using $PROD_HASH..$UAT_HASH"
+        fi
+        echo ""
+    fi
+else
+    # Still perform the range check logic but without debug output
+    COMMIT_COUNT=$(git rev-list --count "$PROD_HASH..$UAT_HASH" -- "$PATH_TO_CHECK" 2>/dev/null || echo "0")
+    if [ "$COMMIT_COUNT" -eq 0 ]; then
+        REVERSE_COUNT=$(git rev-list --count "$UAT_HASH..$PROD_HASH" -- "$PATH_TO_CHECK" 2>/dev/null || echo "0")
+        if [ "$REVERSE_COUNT" -gt 0 ]; then
+            TEMP_HASH="$PROD_HASH"
+            PROD_HASH="$UAT_HASH"
+            UAT_HASH="$TEMP_HASH"
+        fi
+    fi
+fi
+
+# 1. Get list of users who merged (commit authors and committers)
+echo "=== 1. USERS WHO MERGED ==="
+git log --pretty=format:"%an <%ae>" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq
+echo ""
+echo ""
+
+# Also get committers (who actually merged)
+echo "=== COMMITTERS (who actually merged) ==="
+git log --pretty=format:"%cn <%ce>" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq
+echo ""
+echo ""
+
+# 2. Get files changed between the commits
+echo "=== 2. FILES CHANGED ==="
+git diff --name-only $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK
+echo ""
+echo ""
+
+# Full commit details with PR URLs
+echo "=== FULL COMMIT DETAILS WITH PR LINKS ==="
+git log --oneline --graph --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | while IFS= read -r line; do
+    echo "$line"
+    # Extract PR number from commit message (look for "Merged PR 12345:")
+    pr_number=$(echo "$line" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
+    if [[ -n "$pr_number" ]]; then
+        echo "  → PR Link: https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number"
+    fi
+done
+
+echo ""
+echo "=== ANALYSIS COMPLETE ==="
+echo ""
+echo "Report saved to: $OUTPUT_FILE"
+
+} | tee "$OUTPUT_FILE"
+
+echo ""
+echo "Analysis complete! Results saved to: $OUTPUT_FILE"
