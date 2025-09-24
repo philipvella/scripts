@@ -30,6 +30,7 @@ PATH_TO_CHECK="apps/islands-tailwind"
 # Create output file with timestamp
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 OUTPUT_FILE="/Users/philipvella/work/scripts/git/commit_analysis_${TIMESTAMP}.txt"
+SLACK_FILE="/Users/philipvella/work/scripts/git/slack_release_summary_${TIMESTAMP}.md"
 
 # Function to output both to terminal and file
 output() {
@@ -51,6 +52,10 @@ if [ "$DEBUG_MODE" = true ]; then
 fi
 echo "======================================" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
+
+# Initialize Slack-friendly output
+echo "🚀 *Release Summary - $(date '+%B %d, %Y')*" > "$SLACK_FILE"
+echo "" >> "$SLACK_FILE"
 
 # Change to the repository directory
 cd "$REPO_PATH" || { echo "Error: Could not change to repository directory $REPO_PATH"; exit 1; }
@@ -163,12 +168,6 @@ fi
 
 # 1. Get list of users who merged (commit authors and committers)
 echo "=== 1. USERS WHO MERGED ==="
-git log --pretty=format:"%an <%ae>" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq
-echo ""
-echo ""
-
-# Also get committers (who actually merged)
-echo "=== COMMITTERS (who actually merged) ==="
 git log --pretty=format:"%cn <%ce>" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq
 echo ""
 echo ""
@@ -197,5 +196,55 @@ echo "Report saved to: $OUTPUT_FILE"
 
 } | tee "$OUTPUT_FILE"
 
+# Generate Markdown-friendly summary for Slack
+{
+echo "# 🚀 PRE-RELEASE SUMMARY - $(date '+%B %d, %Y' | tr '[:lower:]' '[:upper:]')"
 echo ""
-echo "Analysis complete! Results saved to: $OUTPUT_FILE"
+echo "**📦 Component:** \`$PATH_TO_CHECK\`"
+echo "**🔄 From:** \`${PROD_HASH:0:8}\` → **To:** \`${UAT_HASH:0:8}\`"
+echo ""
+
+# Count commits and users
+COMMIT_COUNT=$(git rev-list --count "$PROD_HASH..$UAT_HASH" -- "$PATH_TO_CHECK" 2>/dev/null || echo "0")
+USER_COUNT=$(git log --pretty=format:"%cn" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq | wc -l | tr -d ' ')
+FILE_COUNT=$(git diff --name-only $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | wc -l | tr -d ' ')
+
+echo "**📊 Summary:** $COMMIT_COUNT commits by $USER_COUNT contributor(s), $FILE_COUNT file(s) changed"
+echo ""
+
+# Contributors
+echo "## 👥 Contributors"
+git log --pretty=format:"%cn" $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | sort | uniq | sed 's/^/- /'
+echo ""
+
+# Key changes (PRs)
+echo "## 🔗 Pull Requests"
+git log --oneline --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | while IFS= read -r line; do
+    pr_number=$(echo "$line" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
+    if [[ -n "$pr_number" ]]; then
+        # Clean up the commit message for Markdown
+        clean_msg=$(echo "$line" | sed 's/^[* |\\]*[a-f0-9]* //' | sed 's/Merged PR [0-9]*: //')
+        echo "- [PR #$pr_number](https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number): $clean_msg"
+    fi
+done
+echo ""
+
+# Files changed (limit to first 10 for readability)
+echo "## 📁 Files Changed"
+file_list=$(git diff --name-only $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK)
+file_count=$(echo "$file_list" | wc -l | tr -d ' ')
+if [ "$file_count" -gt 10 ]; then
+    echo "$file_list" | head -10 | sed 's/^/- `/' | sed 's/$/`/'
+    echo "- ... and $((file_count - 10)) more files"
+else
+    echo "$file_list" | sed 's/^/- `/' | sed 's/$/`/'
+fi
+
+} > "$SLACK_FILE"
+
+echo ""
+echo "Analysis complete!"
+echo "📄 Detailed report: $OUTPUT_FILE"
+echo "📝 Markdown summary: $SLACK_FILE"
+echo ""
+echo "📋 Open $SLACK_FILE in a Markdown viewer, then copy-paste the rendered output to Slack!"

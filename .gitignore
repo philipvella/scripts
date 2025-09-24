@@ -1,1 +1,5 @@
 .idea
+
+# Generated files from pre-release-report.sh
+commit_analysis_*.txt
+slack_release_summary_*.md
