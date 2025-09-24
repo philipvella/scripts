@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# repository: https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo
-# Usage: ./pre-release-report.sh --repo-path <path> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]
+# Usage: ./pre-release-report.sh --repo-path <path> --repo-url <url> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]
 
 # Initialize variables
 DEBUG_MODE=false
@@ -9,13 +8,15 @@ REPO_PATH=""
 UAT_HASH=""
 PROD_HASH=""
 PATH_TO_CHECK=""
+REPO_URL=""
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 --repo-path <path> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]"
+    echo "Usage: $0 --repo-path <path> --repo-url <url> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]"
     echo ""
     echo "Required arguments:"
     echo "  --repo-path <path>       Path to the git repository"
+    echo "  --repo-url <url>         Azure DevOps repository URL (e.g., https://dev.azure.com/YourOrg/YourProject/_git/your-repo)"
     echo "  --uat-hash <hash>        UAT commit hash"
     echo "  --prod-hash <hash>       PROD commit hash"
     echo "  --path-to-check <path>   Path within repo to check for diffs"
@@ -25,7 +26,7 @@ show_usage() {
     echo "  --help                   Show this help message"
     echo ""
     echo "Example:"
-    echo "  $0 --repo-path ~/work/your-frontend-repo --uat-hash abc123def456 --prod-hash def456abc123 --path-to-check apps/your-component"
+    echo "  $0 --repo-path ~/work/your-frontend-repo --repo-url https://dev.azure.com/YourOrg/YourProject/_git/your-repo --uat-hash abc123def456 --prod-hash def456abc123 --path-to-check apps/your-component"
 }
 
 # Parse command line arguments
@@ -33,6 +34,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --repo-path)
             REPO_PATH="$2"
+            shift 2
+            ;;
+        --repo-url)
+            REPO_URL="$2"
             shift 2
             ;;
         --uat-hash)
@@ -64,7 +69,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required arguments
-if [[ -z "$REPO_PATH" || -z "$UAT_HASH" || -z "$PROD_HASH" || -z "$PATH_TO_CHECK" ]]; then
+if [[ -z "$REPO_PATH" || -z "$REPO_URL" || -z "$UAT_HASH" || -z "$PROD_HASH" || -z "$PATH_TO_CHECK" ]]; then
     echo "Error: Missing required arguments"
     echo ""
     show_usage
@@ -232,7 +237,7 @@ git log --oneline --graph --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | w
     # Extract PR number from commit message (look for "Merged PR 12345:")
     pr_number=$(echo "$line" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
     if [[ -n "$pr_number" ]]; then
-        echo "  → PR Link: https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo/pullrequest/$pr_number"
+        echo "  → PR Link: $REPO_URL/pullrequest/$pr_number"
     fi
 done
 
@@ -271,7 +276,7 @@ git log --pretty=format:"%H|%s|%cn" --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO
     if [[ -n "$pr_number" ]]; then
         # Clean up the commit message for Markdown
         clean_msg=$(echo "$commit_msg" | sed 's/^[* |\\]*[a-f0-9]* //' | sed 's/Merged PR [0-9]*: //')
-        echo "- [$clean_msg ($committer_name)](https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo/pullrequest/$pr_number)"
+        echo "- [$clean_msg ($committer_name)]($REPO_URL/pullrequest/$pr_number)"
     fi
 done
 echo ""
