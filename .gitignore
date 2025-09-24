@@ -3,3 +3,6 @@
 # Generated files from pre-release-report.sh
 commit_analysis_*.txt
 slack_release_summary_*.md
+
+# Security scan reports
+security_scan_*.txt
