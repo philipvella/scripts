@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# repository: https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend
+# repository: https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo
 # Usage: ./pre-release-report.sh --repo-path <path> --uat-hash <hash> --prod-hash <hash> --path-to-check <path> [--debug]
 
 # Initialize variables
@@ -25,7 +25,7 @@ show_usage() {
     echo "  --help                   Show this help message"
     echo ""
     echo "Example:"
-    echo "  $0 --repo-path ~/work/kingmakers-frontend --uat-hash 5afd67036559e24f6481896a0b3a8f249c262d5c --prod-hash 8a6052ea57e5d71d570490c956586664efde9275 --path-to-check apps/islands-tailwind"
+    echo "  $0 --repo-path ~/work/your-frontend-repo --uat-hash abc123def456 --prod-hash def456abc123 --path-to-check apps/your-component"
 }
 
 # Parse command line arguments
@@ -232,7 +232,7 @@ git log --oneline --graph --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO_CHECK | w
     # Extract PR number from commit message (look for "Merged PR 12345:")
     pr_number=$(echo "$line" | grep -oE 'Merged PR [0-9]+' | grep -oE '[0-9]+')
     if [[ -n "$pr_number" ]]; then
-        echo "  → PR Link: https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number"
+        echo "  → PR Link: https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo/pullrequest/$pr_number"
     fi
 done
 
@@ -271,7 +271,7 @@ git log --pretty=format:"%H|%s|%cn" --decorate $PROD_HASH..$UAT_HASH -- $PATH_TO
     if [[ -n "$pr_number" ]]; then
         # Clean up the commit message for Markdown
         clean_msg=$(echo "$commit_msg" | sed 's/^[* |\\]*[a-f0-9]* //' | sed 's/Merged PR [0-9]*: //')
-        echo "- [$clean_msg ($committer_name)](https://dev.azure.com/BetagyDevOps/Frontend/_git/kingmakers-frontend/pullrequest/$pr_number)"
+        echo "- [$clean_msg ($committer_name)](https://dev.azure.com/YourOrg/YourProject/_git/your-frontend-repo/pullrequest/$pr_number)"
     fi
 done
 echo ""
