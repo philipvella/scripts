@@ -122,7 +122,7 @@ const fs = require('fs');
             }
         }
         await page.goto('$1', { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.screenshot({ path: '$2', fullPage: true });
+        await page.screenshot({ path: '$2' });
         if (fs.existsSync('$2')) {
             console.log('Screenshot successfully created:', '$2');
         } else {
