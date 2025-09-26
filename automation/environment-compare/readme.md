@@ -2,22 +2,22 @@
 
 ## Quick Start
 
-1. **Setup the project:**
+1. **Set up the project:**
    ```bash
-   ./setup.sh
+   ./scripts/setup.sh
    ```
 
 2. **Edit URL lists:**
-   - Add your UAT URLs to `uat_urls.txt`
-   - Add your PROD URLs to `prod_urls.txt`
+   - Add your UAT URLs to `config/uat_urls.txt`
+   - Add your PROD URLs to `config/prod_urls.txt`
 
 3. **Run comparison:**
    ```bash
    # Basic comparison
-   ./compare_environments.sh
+   ./scripts/compare_environments.sh
    
    # With authentication
-   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./compare_environments.sh
+   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/compare_environments.sh
    ```
 
 4. **View results:**
@@ -37,25 +37,27 @@
 
 ```
 environment-compare/
-├── compare_environments.sh    # Main comparison script
-├── setup.sh                   # Setup and configuration helper
-├── config.sh                  # Configuration settings
-├── uat_urls.txt              # UAT environment URLs
-├── prod_urls.txt             # PROD environment URLs
-├── readme.md                 # Documentation
-└── output/                   # Generated files
+├── scripts/                   # All execution scripts
+│   ├── compare_environments.sh    # Main comparison script
+│   └── setup.sh                   # Setup and configuration helper
+├── config/                    # All configuration files
+│   ├── config.sh              # Configuration settings
+│   ├── uat_urls.txt           # UAT environment URLs
+│   └── prod_urls.txt          # PROD environment URLs
+├── readme.md                  # Documentation
+└── output/                    # Generated files
     ├── screenshots/
-    │   ├── uat/              # UAT screenshots
-    │   └── prod/             # PROD screenshots
-    └── reports/              # HTML comparison reports
+    │   ├── uat/               # UAT screenshots
+    │   └── prod/              # PROD screenshots
+    └── reports/               # HTML comparison reports
 ```
 
 ## Configuration
 
-Edit `config.sh` to customize:
+Edit `config/config.sh` to customize:
 - Screenshot viewport size
 - Browser timeout settings
-- Default cookies
+- Default cookies (set `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE`)
 - Report appearance
 
 ## Authentication
@@ -70,11 +72,11 @@ For pages requiring authentication, provide cookies in these ways:
 
 2. **Command line:**
    ```bash
-   ./compare_environments.sh --uat-cookie "accessToken=xyz..." --prod-cookie "accessToken=abc..."
+   ./scripts/compare_environments.sh --uat-cookie "accessToken=xyz..." --prod-cookie "accessToken=abc..."
    ```
 
 3. **Config file:**
-   Edit `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE` in `config.sh`
+   Edit `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE` in `config/config.sh`
 
 ## Dependencies
 
@@ -123,4 +125,4 @@ The project comes with example URLs for supersportbet.com:
 - UAT: `uat.supersportbet.com`
 - PROD: `www.supersportbet.com`
 
-Replace these with your actual URLs in the respective text files.
+Replace these with your actual URLs in the respective text files in the `config/` folder.
