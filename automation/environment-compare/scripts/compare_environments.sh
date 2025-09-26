@@ -21,9 +21,9 @@ YIGHLIGHT='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Cookie configuration (can be set via environment variables)
-UAT_COOKIE="${UAT_COOKIE:-$DEFAULT_UAT_COOKIE}"
-PROD_COOKIE="${PROD_COOKIE:-$DEFAULT_PROD_COOKIE}"
+# Cookie configuration (only use environment variables from shell, ignore repo config)
+UAT_COOKIE="${UAT_COOKIE}"
+PROD_COOKIE="${PROD_COOKIE}"
 
 # Default viewport size
 VIEWPORT_WIDTH=1920
