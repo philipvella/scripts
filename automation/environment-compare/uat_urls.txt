@@ -1,0 +1,10 @@
+# UAT Environment URLs
+# Format: one URL per line, comments start with #
+
+https://uat.supersportbet.com/en-zm/
+https://uat.supersportbet.com/en-zm/account/payments/deposit?payment-method=mobile-money
+https://uat.supersportbet.com/en-zm/my-accounts/registration/success
+https://uat.supersportbet.com/en-zm/my-accounts
+https://uat.supersportbet.com/en-zm/sports/betslip
+https://uat.supersportbet.com/en-zm/sports/live/football/1
+https://uat.supersportbet.com/en-zm/virtuals/

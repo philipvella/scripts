@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+
+# Output and generated files
+output/
+output/screenshots/
+output/reports/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Puppeteer browser cache
+~/.cache/puppeteer
+
+# OS generated files
+.DS_Store
+
+# Environment files
+.env
+
+# Puppeteer temp scripts
+screenshot_temp.js
+
+# Other generated files
+*.html
+*.png
+
+# Ignore by pattern
+**/output/
+**/screenshots/
+**/reports/
+
