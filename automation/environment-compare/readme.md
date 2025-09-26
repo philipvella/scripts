@@ -62,21 +62,25 @@ Edit `config/config.sh` to customize:
 
 ## Authentication
 
-For pages requiring authentication, provide cookies in these ways:
+For pages requiring authentication, provide cookies in your shell environment (recommended):
 
-1. **Environment variables:**
+1. **Add to your shell profile (e.g., ~/.zshrc or ~/.bashrc):**
    ```bash
    export UAT_COOKIE="accessToken=xyz..."
    export PROD_COOKIE="accessToken=abc..."
    ```
-
-2. **Command line:**
+   Then run:
    ```bash
-   ./scripts/compare_environments.sh --uat-cookie "accessToken=xyz..." --prod-cookie "accessToken=abc..."
+   source ~/.zshrc  # or source ~/.bashrc
+   ```
+   This makes the cookies available to all terminal sessions and scripts.
+
+2. **Command line (temporary for one run):**
+   ```bash
+   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/compare_environments.sh
    ```
 
-3. **Config file:**
-   Edit `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE` in `config/config.sh`
+> **Note:** Cookies set in any project config file (e.g., config/config.sh) are ignored. Only environment variables from your shell are used for authentication.
 
 ## Dependencies
 
