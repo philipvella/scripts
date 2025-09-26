@@ -21,16 +21,13 @@
 
 4. **View results:**
    - Screenshots: `output/screenshots/`
-   - HTML Report: `output/reports/comparison_report_[timestamp].html`
 
 ## Features
 
-- ✅ Takes full-page screenshots of both environments
-- ✅ Generates side-by-side HTML comparison report
-- ✅ Supports authentication via cookies
-- ✅ Responsive HTML report with statistics
-- ✅ Error handling and logging
-- ✅ Configurable viewport and timeouts
+-  Takes full-page screenshots of both environments
+-  Supports authentication via cookies
+-  Error handling and logging
+-  Configurable viewport and timeouts
 
 ## Files Structure
 
@@ -44,10 +41,9 @@ environment-compare/
 │   └── urls.txt               # UAT URLs (PROD URLs are generated automatically)
 ├── readme.md                  # Documentation
 └── output/                    # Generated files
-    ├── screenshots/
-    │   ├── uat/               # UAT screenshots
-    │   └── prod/              # PROD screenshots
-    └── reports/               # HTML comparison reports
+    └── screenshots/
+        ├── uat/               # UAT screenshots
+        └── prod/              # PROD screenshots
 ```
 
 ## Configuration
@@ -56,73 +52,11 @@ Edit `config/config.sh` to customize:
 - Screenshot viewport size
 - Browser timeout settings
 - Default cookies (set `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE`)
-- Report appearance
 
 ## Authentication
 
-For pages requiring authentication, provide cookies in your shell environment (recommended):
-
-1. **Add to your shell profile (e.g., ~/.zshrc or ~/.bashrc):**
-   ```bash
-   export UAT_COOKIE="accessToken=xyz..."
-   export PROD_COOKIE="accessToken=abc..."
-   ```
-   Then run:
-   ```bash
-   source ~/.zshrc  # or source ~/.bashrc
-   ```
-   This makes the cookies available to all terminal sessions and scripts.
-
-2. **Command line (temporary for one run):**
-   ```bash
-   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/compare_environments.sh
-   ```
-
-> **Note:** Cookies set in any project config file (e.g., config/config.sh) are ignored. Only environment variables from your shell are used for authentication.
-
-## Dependencies
-
-- Node.js (for Puppeteer)
-- Bash shell
-- Internet connection
-
-The script will automatically install Puppeteer if not present.
-
-## Troubleshooting
-
-- **"node not found"**: Install Node.js from https://nodejs.org
-- **Screenshot failures**: Check URL accessibility and cookie validity
-- **Empty report**: Verify URL files have valid URLs (one per line)
-
-### Puppeteer Chrome Not Found Error
-
-**Problem:**
-```
-Error: Could not find Chrome (ver. 140.0.7339.207). This can occur if either
- 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
- 2. your cache path is incorrectly configured (which is: /Users/username/.cache/puppeteer).
-```
-
-**Cause:**
-The project uses `puppeteer-core` which doesn't include a bundled Chrome browser. The Chrome browser needs to be installed separately.
-
-**Solutions:**
-
-**Option 1: Install Chrome for Puppeteer (Recommended)**
+Set your cookies as environment variables or in your shell profile:
 ```bash
-npx puppeteer browsers install chrome
+export UAT_COOKIE="accessToken=xyz..."
+export PROD_COOKIE="accessToken=abc..."
 ```
-
-**Option 2: Use full Puppeteer package**
-```bash
-npm uninstall puppeteer-core
-npm install puppeteer
-```
-
-The first option is recommended as it keeps your current setup but adds the required browser. The full `puppeteer` package includes a bundled version of Chrome but increases the package size significantly.
-
-## Examples
-
-The project comes with example UAT URLs for supersportbet.com in `config/urls.txt`. PROD URLs are generated automatically by replacing `uat.supersportbet.com` with `www.supersportbet.com`.
-
-Replace these with your actual UAT URLs in `urls.txt`.
