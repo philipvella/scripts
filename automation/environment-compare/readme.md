@@ -10,13 +10,13 @@
 2. **Edit URL list:**
    - Add your UAT URLs to `config/urls.txt` (PROD URLs are generated automatically)
 
-3. **Run comparison:**
+3. **Run screenshot generation:**
    ```bash
-   # Basic comparison
-   ./scripts/compare_environments.sh
+   # Basic screenshot generation
+   ./scripts/generate_environment_images.sh
    
    # With authentication
-   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/compare_environments.sh
+   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/generate_environment_images.sh
    ```
 
 4. **View results:**
@@ -24,17 +24,17 @@
 
 ## Features
 
--  Takes full-page screenshots of both environments
--  Supports authentication via cookies
--  Error handling and logging
--  Configurable viewport and timeouts
+-  Takes full-page screenshots of both environments
+-  Supports authentication via cookies
+-  Error handling and logging
+-  Configurable viewport and timeouts
 
 ## Files Structure
 
 ```
 environment-compare/
 ├── scripts/                   # All execution scripts
-│   ├── compare_environments.sh    # Main comparison script
+│   ├── generate_environment_images.sh    # Main screenshot generation script
 │   └── setup.sh                   # Setup and configuration helper
 ├── config/                    # All configuration files
 │   ├── config.sh              # Configuration settings

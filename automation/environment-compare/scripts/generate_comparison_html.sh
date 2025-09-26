@@ -30,7 +30,7 @@ cat > "$REPORT_FILE" <<EOF
         .env-label { font-weight: bold; margin-bottom: 10px; padding: 8px 16px; border-radius: 4px; color: #fff; }
         .uat-label { background: #ff6b35; }
         .prod-label { background: #4caf50; }
-        img { max-width: 100%; border: 2px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px #eee; }
+        img { max-width: 375px; border: 2px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px #eee; }
         .missing { color: #999; font-style: italic; background: #eee; padding: 40px; border-radius: 4px; }
     </style>
 </head>

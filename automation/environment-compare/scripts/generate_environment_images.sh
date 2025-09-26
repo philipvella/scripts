@@ -176,7 +176,7 @@ process_environment() {
         if take_screenshot "$target_url" "$output_path" "$cookie" "$env_name"; then
             ((count++))
         fi
-        sleep 2
+        sleep $((RANDOM % 6 + 2)) # Random sleep between 2 and 7 seconds
     done < "$URLS_FILE"
 
     success "Processed $count URLs for $env_name"
