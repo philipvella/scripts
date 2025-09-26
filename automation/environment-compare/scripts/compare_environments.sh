@@ -10,8 +10,7 @@ source "$CONFIG_SH"
 OUTPUT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/output"
 SCREENSHOTS_DIR="$OUTPUT_DIR/screenshots"
 REPORT_DIR="$OUTPUT_DIR/reports"
-UAT_URLS_FILE="$CONFIG_DIR/uat_urls.txt"
-PROD_URLS_FILE="$CONFIG_DIR/prod_urls.txt"
+URLS_FILE="$CONFIG_DIR/urls.txt"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Colors for output
@@ -81,6 +80,12 @@ url_to_filename() {
     echo "$url" | sed 's|https://||g' | sed 's|http://||g' | sed 's|/|_|g' | sed 's|?|_|g' | sed 's|&|_|g' | sed 's|=|_|g'
 }
 
+# Helper to convert UAT to PROD URL
+uat_to_prod_url() {
+    local url="$1"
+    echo "$url" | sed 's|uat.supersportbet.com|www.supersportbet.com|'
+}
+
 # Take screenshot using Puppeteer
 take_screenshot() {
     local url="$1"
@@ -102,6 +107,7 @@ const fs = require('fs');
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         });
         const page = await browser.newPage();
+        await page.setViewport({ width: 375, height: 812 }); // Mobile viewport (iPhone X/11/12/13)
         const cookie = '$3';
         console.log('Cookie being set for $4:', cookie);
         if (cookie) {
@@ -146,13 +152,12 @@ EOF
 
 # Process URLs and take screenshots
 process_environment() {
-    local urls_file="$1"
-    local env_name="$2"
-    local cookie="$3"
-    local screenshot_dir="$4"
+    local env_name="$1"
+    local cookie="$2"
+    local screenshot_dir="$3"
 
-    if [[ ! -f "$urls_file" ]]; then
-        error "URLs file not found: $urls_file"
+    if [[ ! -f "$URLS_FILE" ]]; then
+        error "URLs file not found: $URLS_FILE"
         return 1
     fi
 
@@ -163,16 +168,18 @@ process_environment() {
         # Skip empty lines and comments
         [[ -z "$url" || "$url" =~ ^[[:space:]]*# ]] && continue
 
-        local filename=$(url_to_filename "$url")
+        local target_url="$url"
+        if [[ "$env_name" == "PROD" ]]; then
+            target_url="$(uat_to_prod_url "$url")"
+        fi
+        local filename=$(url_to_filename "$target_url")
         local output_path="$screenshot_dir/${filename}.png"
 
-        if take_screenshot "$url" "$output_path" "$cookie" "$env_name"; then
+        if take_screenshot "$target_url" "$output_path" "$cookie" "$env_name"; then
             ((count++))
         fi
-
-        # Small delay to avoid overwhelming the server
         sleep 2
-    done < "$urls_file"
+    done < "$URLS_FILE"
 
     success "Processed $count URLs for $env_name"
     return 0
@@ -181,9 +188,7 @@ process_environment() {
 # Generate HTML comparison report
 generate_html_report() {
     log "Generating HTML comparison report..."
-
     local report_file="$REPORT_DIR/comparison_report_$TIMESTAMP.html"
-
     cat > "$report_file" << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -391,36 +396,26 @@ generate_html_report() {
 </body>
 </html>
 EOF
-
-    # Replace placeholders and generate comparison data
-    local comparison_data="["
+    # Build comparisons data from urls.txt
+    local comparisons_json="["
     local first=true
-
-    # Get all unique URLs from both files
-    local all_urls=$(cat "$UAT_URLS_FILE" "$PROD_URLS_FILE" 2>/dev/null | grep -v '^#' | grep -v '^$' | sort -u)
-
     while IFS= read -r url; do
-        [[ -z "$url" ]] && continue
-
-        local filename=$(url_to_filename "$url")
-        local uat_file="$SCREENSHOTS_DIR/uat/${filename}.png"
-        local prod_file="$SCREENSHOTS_DIR/prod/${filename}.png"
-
+        [[ -z "$url" || "$url" =~ ^[[:space:]]*# ]] && continue
+        local uat_filename=$(url_to_filename "$url")
+        local prod_url=$(uat_to_prod_url "$url")
+        local prod_filename=$(url_to_filename "$prod_url")
+        local uat_file="$SCREENSHOTS_DIR/uat/${uat_filename}.png"
+        local prod_file="$SCREENSHOTS_DIR/prod/${prod_filename}.png"
         if [[ "$first" != true ]]; then
-            comparison_data+=","
+            comparisons_json+=","
         fi
         first=false
+        comparisons_json+="{\"url\":\"$url\",\"uat_screenshot\":\"$([ -f "$uat_file" ] && echo "${uat_filename}.png" || echo "")\",\"prod_screenshot\":\"$([ -f "$prod_file" ] && echo "${prod_filename}.png" || echo "")\"}"
+    done < "$URLS_FILE"
+    comparisons_json+="]"
 
-        comparison_data+="{\"url\":\"$url\","
-        comparison_data+="\"uat_screenshot\":\"$([ -f "$uat_file" ] && echo "${filename}.png" || echo "")\","
-        comparison_data+="\"prod_screenshot\":\"$([ -f "$prod_file" ] && echo "${filename}.png" || echo "")\"}"
-    done <<< "$all_urls"
-
-    comparison_data+="]"
-
-    # Replace placeholders in HTML
-    sed -i '' "s/TIMESTAMP_PLACEHOLDER/$(date)/g" "$report_file"
-    sed -i '' "s/COMPARISONS_DATA_PLACEHOLDER/$comparison_data/g" "$report_file"
+    # Safely inject JSON into the HTML report as a JS assignment
+    sed -i '' "s/const comparisons = COMPARISONS_DATA_PLACEHOLDER;/const comparisons = $comparisons_json;/g" "$report_file"
 
     success "HTML report generated: $report_file"
     echo "$report_file"
@@ -437,14 +432,14 @@ main() {
     log "PROD_COOKIE value: $PROD_COOKIE"
 
     # Process UAT environment
-    if process_environment "$UAT_URLS_FILE" "UAT" "$UAT_COOKIE" "$SCREENSHOTS_DIR/uat"; then
+    if process_environment "UAT" "$UAT_COOKIE" "$SCREENSHOTS_DIR/uat"; then
         success "UAT environment processed successfully"
     else
         error "Failed to process UAT environment"
     fi
 
     # Process PROD environment
-    if process_environment "$PROD_URLS_FILE" "PROD" "$PROD_COOKIE" "$SCREENSHOTS_DIR/prod"; then
+    if process_environment "PROD" "$PROD_COOKIE" "$SCREENSHOTS_DIR/prod"; then
         success "PROD environment processed successfully"
     else
         error "Failed to process PROD environment"
@@ -478,8 +473,7 @@ show_help() {
     echo "  PROD_COOKIE    Cookie for PROD environment authentication"
     echo ""
     echo "Files Required:"
-    echo "  uat_urls.txt   List of UAT URLs to compare"
-    echo "  prod_urls.txt  List of PROD URLs to compare"
+    echo "  urls.txt       List of URLs to compare (UAT and PROD)"
 }
 
 # Parse command line arguments

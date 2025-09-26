@@ -1,5 +1,5 @@
 # ...existing code...
-# UAT Environment URLs
+# Environment URLs
 # Format: one URL per line, comments start with #
 
 https://uat.supersportbet.com/en-zm/

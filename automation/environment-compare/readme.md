@@ -7,9 +7,8 @@
    ./scripts/setup.sh
    ```
 
-2. **Edit URL lists:**
-   - Add your UAT URLs to `config/uat_urls.txt`
-   - Add your PROD URLs to `config/prod_urls.txt`
+2. **Edit URL list:**
+   - Add your UAT URLs to `config/urls.txt` (PROD URLs are generated automatically)
 
 3. **Run comparison:**
    ```bash
@@ -42,8 +41,7 @@ environment-compare/
 │   └── setup.sh                   # Setup and configuration helper
 ├── config/                    # All configuration files
 │   ├── config.sh              # Configuration settings
-│   ├── uat_urls.txt           # UAT environment URLs
-│   └── prod_urls.txt          # PROD environment URLs
+│   └── urls.txt               # UAT URLs (PROD URLs are generated automatically)
 ├── readme.md                  # Documentation
 └── output/                    # Generated files
     ├── screenshots/
@@ -125,8 +123,6 @@ The first option is recommended as it keeps your current setup but adds the requ
 
 ## Examples
 
-The project comes with example URLs for supersportbet.com:
-- UAT: `uat.supersportbet.com`
-- PROD: `www.supersportbet.com`
+The project comes with example UAT URLs for supersportbet.com in `config/urls.txt`. PROD URLs are generated automatically by replacing `uat.supersportbet.com` with `www.supersportbet.com`.
 
-Replace these with your actual URLs in the respective text files in the `config/` folder.
+Replace these with your actual UAT URLs in `urls.txt`.

@@ -28,17 +28,11 @@ chmod +x "$SCRIPT_DIR/compare_environments.sh"
 
 echo -e "${GREEN}✓ Made compare_environments.sh executable${NC}"
 
-# Check if URL files exist and have content
-if [[ -f "$SCRIPT_DIR/uat_urls.txt" && -s "$SCRIPT_DIR/uat_urls.txt" ]]; then
-    echo -e "${GREEN}✓ UAT URLs file exists and has content${NC}"
+# Only check for urls.txt now
+if [[ -f "$CONFIG_DIR/urls.txt" && -s "$CONFIG_DIR/urls.txt" ]]; then
+    echo -e "${GREEN}\u2713 URLs file exists and has content${NC}"
 else
-    echo -e "${YELLOW}⚠ Please add URLs to uat_urls.txt${NC}"
-fi
-
-if [[ -f "$SCRIPT_DIR/prod_urls.txt" && -s "$SCRIPT_DIR/prod_urls.txt" ]]; then
-    echo -e "${GREEN}✓ PROD URLs file exists and has content${NC}"
-else
-    echo -e "${YELLOW}⚠ Please add URLs to prod_urls.txt${NC}"
+    echo -e "${YELLOW}\u26a0 Please add URLs to urls.txt${NC}"
 fi
 
 echo

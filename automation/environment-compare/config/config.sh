@@ -3,9 +3,9 @@
 # Configuration file for Environment Comparison Tool
 # You can modify these settings to customize the behavior
 
-# Screenshot settings
-export VIEWPORT_WIDTH=1920
-export VIEWPORT_HEIGHT=1080
+# Default viewport size (set for mobile view)
+export VIEWPORT_WIDTH=375
+export VIEWPORT_HEIGHT=812
 
 # Timeout settings (in milliseconds)
 export PAGE_TIMEOUT=30000
