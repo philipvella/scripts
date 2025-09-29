@@ -9,5 +9,6 @@ https://uat.supersportbet.com/en-zm/my-accounts
 https://uat.supersportbet.com/en-zm/sports/betslip
 https://uat.supersportbet.com/en-zm/sports/live/football/1
 https://uat.supersportbet.com/en-zm/virtuals/
-# ...existing code...
+https://uat.supersportbet.com/en-zm/help-centre
+
 

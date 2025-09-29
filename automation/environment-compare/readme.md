@@ -1,62 +1,120 @@
 # Environment Comparison Tool
 
-## Quick Start
+A cross-environment screenshot and visual comparison tool for UAT and PROD web environments. All automation is handled by npm scripts and Node.js—no shell scripts required.
 
-1. **Set up the project:**
+---
+
+## 🚀 Quick Start
+
+1. **Install dependencies:**
    ```bash
-   ./scripts/setup.sh
+   npm install
    ```
 
-2. **Edit URL list:**
-   - Add your UAT URLs to `config/urls.txt` (PROD URLs are generated automatically)
+2. **Project setup:**
+   ```bash
+   npm run setup
+   ```
+   - This checks your config and gives usage instructions.
 
-3. **Run screenshot generation:**
+3. **Edit URL list:**
+   - Add your UAT URLs to `config/urls.txt` (PROD URLs are generated automatically).
+
+4. **Run screenshot generation:**
    ```bash
    # Basic screenshot generation
-   ./scripts/generate_environment_images.sh
-   
+   npm run generate:images
+
    # With authentication
-   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." ./scripts/generate_environment_images.sh
+   UAT_COOKIE="accessToken=xyz..." PROD_COOKIE="accessToken=abc..." npm run generate:images
    ```
 
-4. **View results:**
-   - Screenshots: `output/screenshots/`
+5. **Generate HTML comparison report:**
+   ```bash
+   npm run generate:html
+   ```
 
-## Features
+6. **Build and deploy to Cloudflare Workers:**
+   ```bash
+   npm run build-and-deploy
+   ```
 
--  Takes full-page screenshots of both environments
--  Supports authentication via cookies
--  Error handling and logging
--  Configurable viewport and timeouts
+---
 
-## Files Structure
+## 🗂️ File Structure
 
 ```
 environment-compare/
-├── scripts/                   # All execution scripts
-│   ├── generate_environment_images.sh    # Main screenshot generation script
-│   └── setup.sh                   # Setup and configuration helper
-├── config/                    # All configuration files
-│   ├── config.sh              # Configuration settings
-│   └── urls.txt               # UAT URLs (PROD URLs are generated automatically)
-├── readme.md                  # Documentation
-└── output/                    # Generated files
-    └── screenshots/
-        ├── uat/               # UAT screenshots
-        └── prod/              # PROD screenshots
+├── scripts/                      # All automation scripts (Node.js)
+│   ├── generate_environment_images.js   # Screenshot generator
+│   ├── generate_comparison_html.js      # HTML report generator
+│   └── setup.js                        # Project setup/usage helper
+├── config/                       # Configuration files
+│   └── urls.txt                  # UAT URLs (PROD URLs are generated automatically)
+├── output/                       # Generated files
+│   ├── screenshots/
+│   │   ├── uat/                  # UAT screenshots
+│   │   └── prod/                 # PROD screenshots
+│   └── deploy/                   # Deployable HTML report and screenshots
+├── readme.md                     # Documentation
+└── package.json                  # npm scripts and dependencies
 ```
 
-## Configuration
+---
 
-Edit `config/config.sh` to customize:
-- Screenshot viewport size
-- Browser timeout settings
-- Default cookies (set `DEFAULT_UAT_COOKIE` and `DEFAULT_PROD_COOKIE`)
+## ⚙️ Configuration
 
-## Authentication
+- Edit `config/urls.txt` to add UAT URLs (one per line). PROD URLs are generated automatically.
+- Set authentication cookies as environment variables or in your shell profile:
+  ```bash
+  export UAT_COOKIE="accessToken=xyz..."
+  export PROD_COOKIE="accessToken=abc..."
+  ```
 
-Set your cookies as environment variables or in your shell profile:
-```bash
-export UAT_COOKIE="accessToken=xyz..."
-export PROD_COOKIE="accessToken=abc..."
-```
+---
+
+## ✨ Features
+
+- Takes device-sized screenshots of both environments
+- Supports authentication via cookies
+- Generates a side-by-side HTML comparison report
+- Error handling and logging
+- Configurable viewport and timeouts (edit scripts if needed)
+
+---
+
+## 📝 Usage Reference
+
+- **Setup/check config:**
+  ```bash
+  npm run setup
+  ```
+- **Generate screenshots:**
+  ```bash
+  npm run generate:images
+  ```
+- **Generate HTML report:**
+  ```bash
+  npm run generate:html
+  ```
+- **Build and deploy:**
+  ```bash
+  npm run build-and-deploy
+  ```
+
+---
+
+## 🧹 Migration Notice
+
+- All automation is now handled by npm scripts and Node.js. No shell scripts are required.
+- The following scripts have been replaced by Node.js:
+  - generate_comparison_html.sh
+  - generate_environment_images.sh
+  - setup.sh
+- You can safely remove all .sh files from the scripts directory.
+
+---
+
+## 📄 License
+
+MIT

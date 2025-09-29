@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "generate": "./scripts/generate_environment_images.sh && ./scripts/generate_comparison_html.sh",
-    "build-and-deploy": "npm run generate && npm run deploy"
+    "setup": "node scripts/setup.js",
+    "generate:images": "node scripts/generate_environment_images.js",
+    "generate:html": "node scripts/generate_comparison_html.js",
+    "build-and-deploy": "npm run generate:images && npm run generate:html && npm run deploy"
   },
   "dependencies": {
     "puppeteer": "^24.22.3"
