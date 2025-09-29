@@ -11,6 +11,7 @@
     "build-and-deploy": "npm run generate:images && npm run generate:html && npm run deploy"
   },
   "dependencies": {
+    "fs-extra": "^11.3.2",
     "puppeteer": "^24.22.3"
   },
   "devDependencies": {

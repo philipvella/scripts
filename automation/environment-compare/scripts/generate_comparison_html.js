@@ -1,6 +1,7 @@
 // Node.js script to generate the HTML comparison report and copy screenshots
 const fs = require('fs');
 const path = require('path');
+const fse = require('fs-extra');
 
 const OUTPUT_DIR = path.join(__dirname, 'output');
 const UAT_DIR = path.join(OUTPUT_DIR, 'screenshots', 'uat');
@@ -68,28 +69,48 @@ function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
   return html;
 }
 
-// Main logic
-mkdirp(DEPLOY_UAT);
-mkdirp(DEPLOY_PROD);
-const uatCount = copyPngs(UAT_DIR, DEPLOY_UAT);
-const prodCount = copyPngs(PROD_DIR, DEPLOY_PROD);
-const uatFiles = getUatFiles();
-let pairsCount = 0;
-let prodFiles = 0;
-uatFiles.forEach(uatFile => {
-  const prodFile = uatFile.replace('uat.supersportbet.com', 'www.supersportbet.com');
-  if (fs.existsSync(path.join(DEPLOY_PROD, prodFile))) prodFiles++;
-  if (fs.existsSync(path.join(DEPLOY_UAT, uatFile)) && fs.existsSync(path.join(DEPLOY_PROD, prodFile))) pairsCount++;
-});
-const html = generateHtml(uatFiles, uatCount, prodFiles, pairsCount);
-fs.writeFileSync(path.join(DEPLOY_DIR, 'index.html'), html);
-console.log('============================================');
-console.log('Deployment folder created:', DEPLOY_DIR);
-console.log('============================================');
-console.log('Contents:');
-console.log('  - index.html (main comparison page)');
-console.log(`  - screenshots/uat/ (${uatCount} files)`);
-console.log(`  - screenshots/prod/ (${prodFiles} files)`);
-console.log('\nReady to upload to Cloudflare Workers!');
-console.log(`Just upload the entire '${DEPLOY_DIR}' folder contents.`);
-console.log('============================================');
+async function syncPublicWithDeploy() {
+  const publicDir = path.join(__dirname, '../public');
+  const deployDir = path.join(__dirname, 'output', 'deploy');
+  if (fs.existsSync(publicDir)) {
+    fse.emptyDirSync(publicDir);
+  } else {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+  if (fs.existsSync(deployDir)) {
+    fse.copySync(deployDir, publicDir, { overwrite: true });
+  }
+}
+
+async function main() {
+  mkdirp(DEPLOY_UAT);
+  mkdirp(DEPLOY_PROD);
+  const uatCount = copyPngs(UAT_DIR, DEPLOY_UAT);
+  const prodCount = copyPngs(PROD_DIR, DEPLOY_PROD);
+  const uatFiles = getUatFiles();
+  let pairsCount = 0;
+  let prodFiles = 0;
+  uatFiles.forEach(uatFile => {
+    const prodFile = uatFile.replace('uat.supersportbet.com', 'www.supersportbet.com');
+    if (fs.existsSync(path.join(DEPLOY_PROD, prodFile))) prodFiles++;
+    if (fs.existsSync(path.join(DEPLOY_UAT, uatFile)) && fs.existsSync(path.join(DEPLOY_PROD, prodFile))) pairsCount++;
+  });
+  const html = generateHtml(uatFiles, uatCount, prodFiles, pairsCount);
+  fs.writeFileSync(path.join(DEPLOY_DIR, 'index.html'), html);
+  console.log('============================================');
+  console.log('Deployment folder created:', DEPLOY_DIR);
+  console.log('============================================');
+  console.log('Contents:');
+  console.log('  - index.html (main comparison page)');
+  console.log(`  - screenshots/uat/ (${uatCount} files)`);
+  console.log(`  - screenshots/prod/ (${prodFiles} files)`);
+  console.log('\nReady to upload to Cloudflare Workers!');
+  console.log(`Just upload the entire '${DEPLOY_DIR}' folder contents.`);
+  console.log('============================================');
+}
+
+// IIFE to run main logic and sync
+(async () => {
+  await main();
+  await syncPublicWithDeploy();
+})();
