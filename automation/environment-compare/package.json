@@ -1,5 +1,17 @@
 {
+  "name": "environment-compare",
+  "version": "1.0.0",
+  "description": "Environment screenshot comparison tool",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "generate": "./scripts/generate_environment_images.sh && ./scripts/generate_comparison_html.sh",
+    "build-and-deploy": "npm run generate && npm run deploy"
+  },
   "dependencies": {
     "puppeteer": "^24.22.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.2"
   }
 }
