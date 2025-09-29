@@ -31,4 +31,5 @@ screenshot_temp.js
 **/output/
 **/screenshots/
 **/reports/
+.wrangler
 
