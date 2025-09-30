@@ -4,6 +4,7 @@
   "description": "Environment Comparison Tool for comparing web environments with screenshots and analysis",
   "main": "src/index.js",
   "scripts": {
+    "clean": "rm -rf ./scripts/output ./public .wrangler",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "config": "node config/display-config.js",
