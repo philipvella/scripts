@@ -1,20 +1,34 @@
 {
   "name": "environment-compare",
   "version": "1.0.0",
-  "description": "Environment screenshot comparison tool",
+  "description": "Environment Comparison Tool for comparing web environments with screenshots and analysis",
+  "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "config": "node config/display-config.js",
     "setup": "node scripts/setup.js",
-    "generate:images": "node scripts/generate_environment_images.js",
-    "generate:html": "node scripts/generate_comparison_html.js",
-    "build-and-deploy": "npm run generate:images && npm run generate:html && npm run deploy"
+    "generate-images": "node scripts/generate_environment_images.js",
+    "generate-comparison": "node scripts/generate_comparison_html.js",
+    "generate-favicon": "node scripts/generate_favicon.js",
+    "start": "npm run setup && npm run generate-images && npm run generate-favicon &&  npm run generate-comparison && npm run dev"
   },
+  "keywords": [
+    "environment",
+    "comparison",
+    "screenshots",
+    "testing",
+    "automation"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "fs-extra": "^11.3.2",
-    "puppeteer": "^24.22.3"
+    "puppeteer": "^24.0.0",
+    "fs-extra": "^11.0.0",
+    "wrangler": "4.40.2"
   },
-  "devDependencies": {
-    "wrangler": "^4.40.2"
+  "devDependencies": {},
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

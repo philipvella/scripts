@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
+const config = require('../config/config.js');
 
 const CONFIG_DIR = path.join(__dirname, '../config');
 const OUTPUT_DIR = path.join(__dirname, 'output');
@@ -9,20 +10,24 @@ const SCREENSHOTS_DIR = path.join(OUTPUT_DIR, 'screenshots');
 const URLS_FILE = path.join(CONFIG_DIR, 'urls.txt');
 const UAT_COOKIE = process.env.UAT_COOKIE || '';
 const PROD_COOKIE = process.env.PROD_COOKIE || '';
-const VIEWPORT_WIDTH = 375;
-const VIEWPORT_HEIGHT = 812;
 
 function log(msg) {
-  console.log(`\x1b[34m[${new Date().toISOString()}]\x1b[0m ${msg}`);
+  if (config.logging.level === 'DEBUG' || config.logging.level === 'INFO') {
+    console.log(`\x1b[34m[${new Date().toISOString()}]\x1b[0m ${msg}`);
+  }
 }
 function error(msg) {
   console.error(`\x1b[31m[ERROR]\x1b[0m ${msg}`);
 }
 function success(msg) {
-  console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`);
+  if (config.logging.level === 'DEBUG' || config.logging.level === 'INFO') {
+    console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`);
+  }
 }
 function warn(msg) {
-  console.warn(`\x1b[33m[WARNING]\x1b[0m ${msg}`);
+  if (config.logging.level === 'DEBUG' || config.logging.level === 'INFO' || config.logging.level === 'WARN') {
+    console.warn(`\x1b[33m[WARNING]\x1b[0m ${msg}`);
+  }
 }
 
 function mkdirp(dir) {
@@ -42,11 +47,14 @@ async function takeScreenshot(url, outputPath, cookie, envName) {
   log(`Screenshot will be saved to: ${outputPath}`);
   try {
     const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      headless: config.browser.headlessMode ? 'new' : false,
+      args: config.browser.args
     });
     const page = await browser.newPage();
-    await page.setViewport({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT });
+    await page.setViewport({
+      width: config.viewport.width,
+      height: config.viewport.height
+    });
     if (cookie) {
       const cookies = cookie.split(';').map(pair => {
         const [name, ...rest] = pair.trim().split('=');
@@ -59,8 +67,19 @@ async function takeScreenshot(url, outputPath, cookie, envName) {
         await page.setCookie(...cookies);
       }
     }
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.screenshot({ path: outputPath });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: config.timeouts.pageTimeout });
+
+    // Add screenshot delay if configured
+    if (config.timeouts.screenshotDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, config.timeouts.screenshotDelay * 1000));
+    }
+
+    const screenshotOptions = { path: outputPath };
+    if (config.output.fullPageScreenshots) {
+      screenshotOptions.fullPage = true;
+    }
+
+    await page.screenshot(screenshotOptions);
     await browser.close();
     if (fs.existsSync(outputPath)) {
       success(`Screenshot saved: ${outputPath}`);

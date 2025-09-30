@@ -4,11 +4,17 @@
 
 https://uat.supersportbet.com/en-zm/
 https://uat.supersportbet.com/en-zm/account/payments/deposit?payment-method=mobile-money
-https://uat.supersportbet.com/en-zm/my-accounts/registration/success
+https://uat.supersportbet.com/en-zm/help-centre
 https://uat.supersportbet.com/en-zm/my-accounts
+https://uat.supersportbet.com/en-zm/my-accounts/registration/success
+https://uat.supersportbet.com/en-zm/my-bets/sports/open
+https://uat.supersportbet.com/en-zm/my-bets/virtuals/open
+https://uat.supersportbet.com/en-zm/pick-11/lobby
+https://uat.supersportbet.com/en-zm/promotions
 https://uat.supersportbet.com/en-zm/sports/betslip
+https://uat.supersportbet.com/en-zm/sports/football/competitions
+https://uat.supersportbet.com/en-zm/sports/football/featured
+https://uat.supersportbet.com/en-zm/sports/football/today
 https://uat.supersportbet.com/en-zm/sports/live/football/1
 https://uat.supersportbet.com/en-zm/virtuals/
-https://uat.supersportbet.com/en-zm/help-centre
-
-
+https://uat.supersportbet.com/en-zm/virtuals/scheduled/leagues/super-league?betslipDrawerOpen=true
