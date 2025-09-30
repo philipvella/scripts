@@ -6,7 +6,10 @@
 /en-zm/account/payments/deposit?payment-method=mobile-money
 /en-zm/help-centre
 /en-zm/my-accounts
+/en-zm/my-accounts/account-information
+/en-zm/my-accounts/personal-information
 /en-zm/my-accounts/registration/success
+/en-zm/my-accounts/settings/password-change
 /en-zm/my-bets/sports/open
 /en-zm/my-bets/virtuals/open
 /en-zm/pick-11/lobby
