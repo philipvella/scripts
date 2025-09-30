@@ -33,6 +33,12 @@ const config = {
     thumbnailWidth: 400
   },
 
+  // Comparison settings
+  comparison: {
+    similarityThreshold: 80, // Minimum similarity percentage to consider images as matching
+    pixelThreshold: 0.1      // Pixel difference sensitivity (0.0 - 1.0)
+  },
+
   // Report settings
   report: {
     title: 'SSB UAT & PROD Comparison Report',
