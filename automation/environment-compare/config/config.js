@@ -35,7 +35,7 @@ const config = {
 
   // Comparison settings
   comparison: {
-    similarityThreshold: 80, // Minimum similarity percentage to consider images as matching
+    similarityThreshold: 90, // Minimum similarity percentage to consider images as matching
     pixelThreshold: 0.1      // Pixel difference sensitivity (0.0 - 1.0)
   },
 
