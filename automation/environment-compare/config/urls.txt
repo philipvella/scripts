@@ -12,6 +12,9 @@
 /en-zm/my-accounts/account-closure-reason
 /en-zm/my-accounts/account-information
 /en-zm/my-accounts/account-statement
+/en-zm/my-accounts/accounts
+/en-zm/my-accounts/freebet-details/7THC2ISD
+/en-zm/my-accounts/freebets
 /en-zm/my-accounts/kyc-verification/identification-selection?verificationType=identity
 /en-zm/my-accounts/kyc-verification/identity-info
 /en-zm/my-accounts/kyc-verification/identity-upload-info?verificationType=identity
@@ -19,6 +22,7 @@
 /en-zm/my-accounts/kyc-verification/select-document-upload
 /en-zm/my-accounts/kyc-verification/upload-document
 /en-zm/my-accounts/my-details
+/en-zm/my-accounts/notification-settings
 /en-zm/my-accounts/personal-information
 /en-zm/my-accounts/registration/success
 /en-zm/my-accounts/responsible-gaming
@@ -32,7 +36,6 @@
 /en-zm/my-bets/sports/open
 /en-zm/my-bets/virtuals/open
 /en-zm/pick-11/lobby
-/en-zm/promotions
 /en-zm/promotions
 /en-zm/promotions/games
 /en-zm/promotions/sports
