@@ -12,6 +12,12 @@ const PROD_DIR = path.join(OUTPUT_DIR, 'screenshots', 'prod');
 const DEPLOY_DIR = path.join(OUTPUT_DIR, 'deploy');
 const DEPLOY_UAT = path.join(DEPLOY_DIR, 'screenshots', 'uat');
 const DEPLOY_PROD = path.join(DEPLOY_DIR, 'screenshots', 'prod');
+const CONFIG_DIR = path.join(__dirname, '../config');
+const URLS_FILE = path.join(CONFIG_DIR, 'urls.txt');
+
+// Base URLs for environments
+const UAT_BASE = 'https://uat.supersportbet.com';
+const PROD_BASE = 'https://www.supersportbet.com';
 
 function mkdirp(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -22,6 +28,25 @@ function copyPngs(srcDir, destDir) {
   const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.png'));
   files.forEach(f => fs.copyFileSync(path.join(srcDir, f), path.join(destDir, f)));
   return files.length;
+}
+
+function pathToFilename(relativePath) {
+  // Convert relative path to safe filename (same logic as in image generation)
+  return relativePath.replace(/^\/+/, '').replace(/[\/\?&=]/g, '_') || 'root';
+}
+
+function constructUrl(relativePath, baseUrl) {
+  // Ensure path starts with /
+  const cleanPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${baseUrl}${cleanPath}`;
+}
+
+function getRelativePaths() {
+  if (!fs.existsSync(URLS_FILE)) return [];
+  return fs.readFileSync(URLS_FILE, 'utf-8')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
 }
 
 function getUatFiles() {
@@ -48,9 +73,21 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
   // Perform image comparisons first
   const comparisons = [];
   let mismatchCount = 0;
+  const relativePaths = getRelativePaths();
+
+  // Create mapping from filename to relative path
+  const filenameToPath = {};
+  relativePaths.forEach(relativePath => {
+    const filename = pathToFilename(relativePath) + '.png';
+    filenameToPath[filename] = relativePath;
+  });
 
   for (const uatFile of uatFiles) {
-    const prodFile = uatFile.replace('uat.supersportbet.com', 'www.supersportbet.com');
+    // Get the corresponding relative path
+    const relativePath = filenameToPath[uatFile];
+    if (!relativePath) continue;
+
+    const prodFile = uatFile; // Same filename for both environments now
     const uatPath = path.join(DEPLOY_UAT, uatFile);
     const prodPath = path.join(DEPLOY_PROD, prodFile);
 
@@ -58,6 +95,7 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
     comparisons.push({
       uatFile,
       prodFile,
+      relativePath,
       ...comparisonResult
     });
 
@@ -72,10 +110,8 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
     if (a.similarity !== b.similarity) {
       return a.similarity - b.similarity;
     }
-    // Then sort alphabetically by URL
-    const urlA = a.uatFile.replace('uat.supersportbet.com_', '').replace(/_/g, '/').replace('.png', '');
-    const urlB = b.uatFile.replace('uat.supersportbet.com_', '').replace(/_/g, '/').replace('.png', '');
-    return urlA.localeCompare(urlB);
+    // Then sort alphabetically by relative path
+    return a.relativePath.localeCompare(b.relativePath);
   });
 
   // Only include stats section if configured
@@ -87,8 +123,7 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
       html += `<div class="urls-section">\n<div class="urls-section-header">\n<h3>URLs Compared</h3>\n<button class="toggle-btn collapsed" id="toggle-urls">▶</button>\n</div>\n<div class="urls-content collapsed" id="urls-content">\n<div class="urls-grid">\n<div class="urls-column">\n<h4 class="uat-header">UAT Paths</h4>\n<ul class="urls-list uat-urls">\n`;
 
       comparisons.forEach((comparison, index) => {
-        const pathStr = comparison.uatFile.replace('uat.supersportbet.com_', '').replace(/_/g, '/').replace('.png', '');
-        const displayPath = pathStr === '' ? '/' : `/${pathStr}`;
+        const displayPath = comparison.relativePath;
         const mismatchClass = comparison.mismatch ? ' mismatch' : '';
         html += `<li><a href="#comparison-${index}" class="url-link uat-link${mismatchClass}">${displayPath}</a></li>\n`;
       });
@@ -96,8 +131,7 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
       html += `</ul>\n</div>\n<div class="urls-column">\n<h4 class="prod-header">PROD Paths</h4>\n<ul class="urls-list prod-urls">\n`;
 
       comparisons.forEach((comparison, index) => {
-        const pathStr = comparison.uatFile.replace('uat.supersportbet.com_', '').replace(/_/g, '/').replace('.png', '');
-        const displayPath = pathStr === '' ? '/' : `/${pathStr}`;
+        const displayPath = comparison.relativePath;
         const mismatchClass = comparison.mismatch ? ' mismatch' : '';
         html += `<li><a href="#comparison-${index}" class="url-link prod-link${mismatchClass}">${displayPath}</a></li>\n`;
       });
@@ -110,9 +144,9 @@ async function generateHtml(uatFiles, uatCount, prodCount, pairsCount) {
 
   // Generate comparison sections with similarity data
   comparisons.forEach((comparison, index) => {
-    const { uatFile, prodFile, similarity, mismatch } = comparison;
-    const uatUrl = 'https://uat.supersportbet.com/' + uatFile.replace('uat.supersportbet.com_', '').replace(/_/g, '/').replace('.png', '');
-    const prodUrl = uatUrl.replace('uat.supersportbet.com', 'www.supersportbet.com');
+    const { uatFile, prodFile, relativePath, similarity, mismatch } = comparison;
+    const uatUrl = constructUrl(relativePath, UAT_BASE);
+    const prodUrl = constructUrl(relativePath, PROD_BASE);
     const mismatchClass = mismatch ? ' mismatch' : '';
     const similarityClass = similarity >= config.comparison.similarityThreshold ? 'similarity-high' : 'similarity-low';
 
@@ -229,13 +263,27 @@ async function main() {
   const uatCount = copyPngs(UAT_DIR, DEPLOY_UAT);
   const prodCount = copyPngs(PROD_DIR, DEPLOY_PROD);
   const uatFiles = getUatFiles();
+  const relativePaths = getRelativePaths();
+
+  // Create mapping from filename to relative path for counting
+  const filenameToPath = {};
+  relativePaths.forEach(relativePath => {
+    const filename = pathToFilename(relativePath) + '.png';
+    filenameToPath[filename] = relativePath;
+  });
+
   let pairsCount = 0;
   let prodFiles = 0;
+
   uatFiles.forEach(uatFile => {
-    const prodFile = uatFile.replace('uat.supersportbet.com', 'www.supersportbet.com');
-    if (fs.existsSync(path.join(DEPLOY_PROD, prodFile))) prodFiles++;
-    if (fs.existsSync(path.join(DEPLOY_UAT, uatFile)) && fs.existsSync(path.join(DEPLOY_PROD, prodFile))) pairsCount++;
+    const relativePath = filenameToPath[uatFile];
+    if (relativePath) {
+      const prodFile = uatFile; // Same filename for both environments now
+      if (fs.existsSync(path.join(DEPLOY_PROD, prodFile))) prodFiles++;
+      if (fs.existsSync(path.join(DEPLOY_UAT, uatFile)) && fs.existsSync(path.join(DEPLOY_PROD, prodFile))) pairsCount++;
+    }
   });
+
   const html = await generateHtml(uatFiles, uatCount, prodFiles, pairsCount);
   fs.writeFileSync(path.join(DEPLOY_DIR, 'index.html'), html);
   console.log('============================================');

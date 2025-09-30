@@ -11,6 +11,10 @@ const URLS_FILE = path.join(CONFIG_DIR, 'urls.txt');
 const UAT_COOKIE = process.env.UAT_COOKIE || '';
 const PROD_COOKIE = process.env.PROD_COOKIE || '';
 
+// Base URLs for environments
+const UAT_BASE = 'https://uat.supersportbet.com';
+const PROD_BASE = 'https://www.supersportbet.com';
+
 function log(msg) {
   if (config.logging.level === 'DEBUG' || config.logging.level === 'INFO') {
     console.log(`\x1b[34m[${new Date().toISOString()}]\x1b[0m ${msg}`);
@@ -40,6 +44,17 @@ function urlToFilename(url) {
 
 function uatToProdUrl(url) {
   return url.replace('uat.supersportbet.com', 'www.supersportbet.com');
+}
+
+function pathToFilename(relativePath) {
+  // Convert relative path to safe filename
+  return relativePath.replace(/^\/+/, '').replace(/[\/\?&=]/g, '_') || 'root';
+}
+
+function constructUrl(relativePath, baseUrl) {
+  // Ensure path starts with /
+  const cleanPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${baseUrl}${cleanPath}`;
 }
 
 async function takeScreenshot(url, outputPath, cookie, envName) {
@@ -91,23 +106,30 @@ async function takeScreenshot(url, outputPath, cookie, envName) {
   }
 }
 
-async function processEnvironment(envName, cookie, screenshotDir) {
+async function processEnvironment(envName, cookie, screenshotDir, baseUrl) {
   if (!fs.existsSync(URLS_FILE)) {
     error(`URLs file not found: ${URLS_FILE}`);
     return;
   }
   log(`Processing ${envName} environment...`);
-  const urls = fs.readFileSync(URLS_FILE, 'utf-8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+
+  // Read relative paths from urls.txt
+  const relativePaths = fs.readFileSync(URLS_FILE, 'utf-8')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+
   let count = 0;
-  for (const url of urls) {
-    let targetUrl = url;
-    if (envName === 'PROD') targetUrl = uatToProdUrl(url);
-    const filename = urlToFilename(targetUrl);
+  for (const relativePath of relativePaths) {
+    const fullUrl = constructUrl(relativePath, baseUrl);
+    const filename = pathToFilename(relativePath);
     const outputPath = path.join(screenshotDir, `${filename}.png`);
-    await takeScreenshot(targetUrl, outputPath, cookie, envName);
+
+    await takeScreenshot(fullUrl, outputPath, cookie, envName);
     count++;
-    // Random sleep between 0.1 and 1 seconds
-    const sleepMs = (Math.random() * 0.9 + 0.1) * 1000;
+
+    // Random sleep between 0 and 1 seconds
+    const sleepMs = Math.floor(Math.random() * 1000);
     await new Promise(res => setTimeout(res, sleepMs));
   }
   success(`Processed ${count} URLs for ${envName}`);
@@ -119,8 +141,10 @@ async function main() {
   mkdirp(path.join(SCREENSHOTS_DIR, 'prod'));
   log(`UAT_COOKIE value: ${UAT_COOKIE}`);
   log(`PROD_COOKIE value: ${PROD_COOKIE}`);
-  await processEnvironment('UAT', UAT_COOKIE, path.join(SCREENSHOTS_DIR, 'uat'));
-  await processEnvironment('PROD', PROD_COOKIE, path.join(SCREENSHOTS_DIR, 'prod'));
+
+  await processEnvironment('UAT', UAT_COOKIE, path.join(SCREENSHOTS_DIR, 'uat'), UAT_BASE);
+  await processEnvironment('PROD', PROD_COOKIE, path.join(SCREENSHOTS_DIR, 'prod'), PROD_BASE);
+
   console.log('\nResults:');
   console.log(`  Screenshots: ${SCREENSHOTS_DIR}`);
   console.log('\nTo view the screenshots, open the files in:', SCREENSHOTS_DIR);

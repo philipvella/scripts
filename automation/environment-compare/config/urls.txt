@@ -1,20 +1,20 @@
-# ...existing code...
 # Environment URLs
 # Format: one URL per line, comments start with #
+# Use relative paths - they will be combined with UAT/PROD base URLs
 
-https://uat.supersportbet.com/en-zm/
-https://uat.supersportbet.com/en-zm/account/payments/deposit?payment-method=mobile-money
-https://uat.supersportbet.com/en-zm/help-centre
-https://uat.supersportbet.com/en-zm/my-accounts
-https://uat.supersportbet.com/en-zm/my-accounts/registration/success
-https://uat.supersportbet.com/en-zm/my-bets/sports/open
-https://uat.supersportbet.com/en-zm/my-bets/virtuals/open
-https://uat.supersportbet.com/en-zm/pick-11/lobby
-https://uat.supersportbet.com/en-zm/promotions
-https://uat.supersportbet.com/en-zm/sports/betslip
-https://uat.supersportbet.com/en-zm/sports/football/competitions
-https://uat.supersportbet.com/en-zm/sports/football/featured
-https://uat.supersportbet.com/en-zm/sports/football/today
-https://uat.supersportbet.com/en-zm/sports/live/football/1
-https://uat.supersportbet.com/en-zm/virtuals/
-https://uat.supersportbet.com/en-zm/virtuals/scheduled/leagues/super-league?betslipDrawerOpen=true
+/en-zm/
+/en-zm/account/payments/deposit?payment-method=mobile-money
+/en-zm/help-centre
+/en-zm/my-accounts
+/en-zm/my-accounts/registration/success
+/en-zm/my-bets/sports/open
+/en-zm/my-bets/virtuals/open
+/en-zm/pick-11/lobby
+/en-zm/promotions
+/en-zm/sports/betslip
+/en-zm/sports/football/competitions
+/en-zm/sports/football/featured
+/en-zm/sports/football/today
+/en-zm/sports/live/football/1
+/en-zm/virtuals/
+/en-zm/virtuals/scheduled/leagues/super-league?betslipDrawerOpen=true
