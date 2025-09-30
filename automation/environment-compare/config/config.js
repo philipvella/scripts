@@ -28,7 +28,7 @@ const config = {
 
   // Output settings
   output: {
-    fullPageScreenshots: true,
+    fullPageScreenshots: false,
     generateThumbnails: false,
     thumbnailWidth: 400
   },
