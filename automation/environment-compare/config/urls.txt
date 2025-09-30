@@ -33,6 +33,10 @@
 /en-zm/my-bets/virtuals/open
 /en-zm/pick-11/lobby
 /en-zm/promotions
+/en-zm/promotions
+/en-zm/promotions/games
+/en-zm/promotions/sports
+/en-zm/promotions/virtuals
 /en-zm/sports/betslip
 /en-zm/sports/football/competitions
 /en-zm/sports/football/featured
