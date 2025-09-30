@@ -9,9 +9,9 @@
     "config": "node config/display-config.js",
     "setup": "node scripts/setup.js",
     "generate-images": "node scripts/generate_environment_images.js",
-    "generate-comparison": "node scripts/generate_comparison_html.js",
+    "generate-comparison-report": "node scripts/generate_comparison_html.js",
     "generate-favicon": "node scripts/generate_favicon.js",
-    "start": "npm run setup && npm run generate-images && npm run generate-favicon &&  npm run generate-comparison && npm run dev"
+    "start": "npm run setup && npm run generate-images && npm run generate-favicon &&  npm run generate-comparison-report && npm run dev"
   },
   "keywords": [
     "environment",
