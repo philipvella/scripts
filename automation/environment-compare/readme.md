@@ -107,7 +107,7 @@ The following npm scripts are available:
 - **`npm run config`** - Display current configuration settings
 - **`npm run setup`** - Run initial setup
 - **`npm run generate-images`** - Generate environment screenshots
-- **`npm run generate-comparison`** - Generate comparison HTML report
+- **`npm run generate-comparison-report`** - Generate comparison HTML report
 - **`npm run generate-favicon`** - Generate favicon for the report
 - **`npm start`** - Run the complete workflow (setup → images → comparison)
 
