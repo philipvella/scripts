@@ -48,6 +48,30 @@ async function generateReport() {
         return ranges;
     }
 
+    function getMergedDateRanges(dates) {
+        if (!dates || dates.length === 0) return [];
+        // Sort dates
+        const sorted = dates.map(d => new Date(d)).sort((a, b) => a - b);
+        const ranges = [];
+        let rangeStart = sorted[0];
+        let rangeEnd = sorted[0];
+        for (let i = 1; i < sorted.length; i++) {
+            const curr = sorted[i];
+            // If current date is the same as or next day after rangeEnd, extend the range
+            if ((curr - rangeEnd) <= 24 * 60 * 60 * 1000) {
+                rangeEnd = curr;
+            } else {
+                // Save previous range
+                ranges.push({ start: rangeStart, end: rangeEnd });
+                rangeStart = curr;
+                rangeEnd = curr;
+            }
+        }
+        // Save last range
+        ranges.push({ start: rangeStart, end: rangeEnd });
+        return ranges;
+    }
+
     for (const location of recentLocations) {
         const country = location.country || 'Unknown';
         if (!countrySummary[country]) {
@@ -76,7 +100,7 @@ async function generateReport() {
 
     // Calculate date ranges for each country
     for (const summary of Object.values(countrySummary)) {
-        summary.dateRanges = getDateRanges(summary.allDates);
+        summary.dateRanges = getMergedDateRanges(summary.allDates);
     }
 
     // Output the summary report to console and to a txt file in output dir
@@ -85,18 +109,18 @@ async function generateReport() {
     if (dateRange) {
         reportText += `Date Range: ${dateRange.start} to ${dateRange.end}\n`;
     }
-    reportText += '------------------------------------------------------------------------------------------\n';
-    reportText += '| Country       | First Visit | Last Visit  | Total Visits | Date Ranges                  |\n';
-    reportText += '------------------------------------------------------------------------------------------\n';
+    reportText += '---------------------------------------------\n';
+    reportText += '| Country       | Arrival     | Departure   |\n';
+    reportText += '---------------------------------------------\n';
     for (const [country, summary] of Object.entries(countrySummary)) {
-        const firstVisit = summary.firstVisit ? summary.firstVisit.toISOString().slice(0,10) : 'N/A';
-        const lastVisit = summary.lastVisit ? summary.lastVisit.toISOString().slice(0,10) : 'N/A';
-        const rangesStr = summary.dateRanges.map(r => r.start.toISOString().slice(0,10) === r.end.toISOString().slice(0,10)
-            ? r.start.toISOString().slice(0,10)
-            : `${r.start.toISOString().slice(0,10)} to ${r.end.toISOString().slice(0,10)}`).join('; ');
-        reportText += `| ${country.padEnd(13)} | ${firstVisit} | ${lastVisit} | ${summary.totalVisits.toString().padEnd(12)} | ${rangesStr.padEnd(30)} |\n`;
+        // For each country, output each range as a row
+        for (const range of summary.dateRanges) {
+            const arrival = range.start ? range.start.toISOString().slice(0,10) : 'N/A';
+            const departure = range.end ? range.end.toISOString().slice(0,10) : 'N/A';
+            reportText += `| ${country.padEnd(13)} | ${arrival} | ${departure} |\n`;
+        }
     }
-    reportText += '------------------------------------------------------------------------------------------\n';
+    reportText += '---------------------------------------------\n';
 
     // Write to output/report.txt
     const outputDir = path.join(__dirname, 'output');
