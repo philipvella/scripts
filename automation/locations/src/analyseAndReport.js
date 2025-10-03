@@ -112,13 +112,19 @@ async function generateReport() {
     reportText += '---------------------------------------------\n';
     reportText += '| Country       | Arrival     | Departure   |\n';
     reportText += '---------------------------------------------\n';
+    // Collect all rows for sorting
+    let rows = [];
     for (const [country, summary] of Object.entries(countrySummary)) {
-        // For each country, output each range as a row
         for (const range of summary.dateRanges) {
             const arrival = range.start ? range.start.toISOString().slice(0,10) : 'N/A';
             const departure = range.end ? range.end.toISOString().slice(0,10) : 'N/A';
-            reportText += `| ${country.padEnd(13)} | ${arrival} | ${departure} |\n`;
+            rows.push({ country, arrival, departure });
         }
+    }
+    // Sort rows by arrival date ascending
+    rows.sort((a, b) => a.arrival.localeCompare(b.arrival));
+    for (const row of rows) {
+        reportText += `| ${row.country.padEnd(13)} | ${row.arrival} | ${row.departure} |\n`;
     }
     reportText += '---------------------------------------------\n';
 
