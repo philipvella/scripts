@@ -1,0 +1,12 @@
+{
+  "name": "locations",
+  "version": "1.0.0",
+  "scripts": {
+    "1-get-locations": "node src/index.js",
+    "2-transform-locations": "node src/countryNames.js",
+    "3-analyse-and-report": "node src/analyseAndReport.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2"
+  }
+}
