@@ -81,8 +81,10 @@ REPO_PATH="${REPO_PATH/#\~/$HOME}"
 
 # Create output file with timestamp
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-OUTPUT_FILE="/Users/philipvella/work/scripts/git/commit_analysis_${TIMESTAMP}.txt"
-SLACK_FILE="/Users/philipvella/work/scripts/git/slack_release_summary_${TIMESTAMP}.md"
+OUTPUT_DIR="/Users/philipvella/work/scripts/git/output"
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_FILE="$OUTPUT_DIR/commit_analysis_${TIMESTAMP}.txt"
+SLACK_FILE="$OUTPUT_DIR/slack_release_summary_${TIMESTAMP}.md"
 
 # Function to output both to terminal and file
 output() {
