@@ -6,3 +6,7 @@ slack_release_summary_*.md
 
 # Security scan reports
 security_scan_*.txt
+
+# Ignore all output folders
+output/
+**/output/
