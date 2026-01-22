@@ -1,0 +1,12 @@
+{
+  "name": "json-order",
+  "version": "1.0.0",
+  "description": "Reorder JSON object keys alphabetically (recursively) and output to .ordered.json file.",
+  "main": "json-order.js",
+  "scripts": {
+    "order": "node json-order.js"
+  },
+  "author": "",
+  "license": "MIT"
+}
+
