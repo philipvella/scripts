@@ -16,23 +16,17 @@ If no changes are found, it will output "No changes found between the two enviro
 
 When the user provides details we need to save them to the .env file so that the next time the user runs the tool, it can fetch the details from the .env file and use them without asking the user again. The user should also have the option to update the details if they want to. Like this we can avoid asking the user for the same details every time they run the tool.
 
+
 ### Jira API
 
 If you provide Jira credentials, the tool will fetch ticket details (summary + status) from Jira Cloud and include them in the output.
+The final output is README-style markdown and each Jira item is rendered as a clickable link using the ticket URL.
 
 You can provide these either via prompts/flags or environment variables:
 
 - ATLASSIAN_EMAIL 
 - ATLASSIAN_API_TOKEN 
 - ATLASSIAN_BASE_URL
-
-### OpenAi API
-
-If you provide OpenAI credentials, the tool will use the OpenAI API to generate a summary of the changes based on the commit messages and the JIRA ticket details. This can help you understand the overall impact of the changes without having to read through all the commit messages.
-
-You can provide these either via prompts/flags or environment variables:
-
-- OPENAI_API_KEY
 
 ## What is asks for
 
@@ -48,4 +42,4 @@ You can provide these either via prompts/flags or environment variables:
 
 ## Nice to have
 
-1. Ability to get all the changes, ignore the *lock* files and then check against openai to also add a description of the change, so you can have a better understanding of what the change is about and not just the jira ticket number.
+1. Ability to write the markdown output directly to a changelog/readme file inside the target repo.

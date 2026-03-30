@@ -33,7 +33,6 @@ function mergeWithProcess(saved) {
     atlassianEmail: process.env.ATLASSIAN_EMAIL || saved.ATLASSIAN_EMAIL || '',
     atlassianApiToken: process.env.ATLASSIAN_API_TOKEN || saved.ATLASSIAN_API_TOKEN || '',
     atlassianBaseUrl: process.env.ATLASSIAN_BASE_URL || saved.ATLASSIAN_BASE_URL || '',
-    openaiApiKey: process.env.OPENAI_API_KEY || saved.OPENAI_API_KEY || '',
   };
 }
 
@@ -52,7 +51,6 @@ export async function loadConfig() {
     console.log(chalk.gray(`  App path       : ${current.appPath}`));
     console.log(chalk.gray(`  Branch         : ${current.branch}`));
     if (current.atlassianBaseUrl) console.log(chalk.gray(`  Jira base URL  : ${current.atlassianBaseUrl}`));
-    if (current.openaiApiKey) console.log(chalk.gray(`  OpenAI         : configured`));
 
     const { action } = await inquirer.prompt([
       {
@@ -145,31 +143,9 @@ export async function loadConfig() {
       ]);
     }
 
-    let openaiAnswer = {};
-    const { configureOpenAI } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'configureOpenAI',
-        message: 'Configure OpenAI for AI summaries?',
-        default: !!(current.openaiApiKey || updateMode),
-      },
-    ]);
-    if (configureOpenAI) {
-      openaiAnswer = await inquirer.prompt([
-        {
-          type: 'password',
-          name: 'openaiApiKey',
-          message: 'OpenAI API key:',
-          default: current.openaiApiKey || undefined,
-          validate: (v) => v.trim() ? true : 'Required',
-        },
-      ]);
-    }
-
     const merged = {
       ...answers,
       ...jiraAnswers,
-      ...openaiAnswer,
       configureJira: undefined,
     };
 
@@ -177,7 +153,6 @@ export async function loadConfig() {
     if (!merged.atlassianBaseUrl) merged.atlassianBaseUrl = current.atlassianBaseUrl;
     if (!merged.atlassianEmail) merged.atlassianEmail = current.atlassianEmail;
     if (!merged.atlassianApiToken) merged.atlassianApiToken = current.atlassianApiToken;
-    if (!merged.openaiApiKey) merged.openaiApiKey = current.openaiApiKey;
 
     // Save to .env
     saveEnv({
@@ -189,7 +164,6 @@ export async function loadConfig() {
       ATLASSIAN_EMAIL: merged.atlassianEmail || '',
       ATLASSIAN_API_TOKEN: merged.atlassianApiToken || '',
       ATLASSIAN_BASE_URL: merged.atlassianBaseUrl || '',
-      OPENAI_API_KEY: merged.openaiApiKey || '',
     });
 
     console.log(chalk.green('  ✓ Configuration saved to .env\n'));
