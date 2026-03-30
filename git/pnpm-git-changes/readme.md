@@ -1,45 +1,93 @@
 # pnpm-git-changes
 
-# Description
+`pnpm-git-changes` compares deployed commits between UAT and Production, filters to app-relevant changes in a pnpm workspace, extracts Jira tickets from commit messages, and prints a README-style changelog.
 
-A cli tool which asks you questions to eventually get a list of jira tickets that are related to the changes you have made in your git branch. It checks for all the changes done between the two git commits in the UAT and PROD environments. 
+## What it does
 
-In the DOM there is a meta tag called 'git-commit' which contains the git commit hash of the deployed code, this tool uses that to check for the changes between the two environments.
+1. Fetches commit hashes from each environment URL via `<meta name="git-commit" content="...">`.
+2. Reads git history between those commits.
+3. Filters commits to your app scope:
+   - Excludes lockfile-only changes.
+   - In pnpm workspaces, keeps changes in the target app and its workspace dependency graph.
+4. Extracts Jira IDs from commit messages using pattern `\b[A-Z]{2,10}-\d+\b`.
+5. Optionally fetches Jira `summary` and `status` from Jira Cloud API.
+6. Prints markdown output with:
+   - `## 📝 What Changed` (human-readable bullet summary)
+   - `## 🎫 Jira Tickets` (clickable ticket links when URL is known)
 
-What it does is compares the two git commits and then checks for the jira tickets that are related to those changes, it then outputs a list of jira tickets that are related to the changes you have made in your git branch. It uses pnpm commands to see which changes actually effect the application and which don't, so it can filter out the irrelevant changes and only show you the relevant ones.
+## Requirements
 
-To get the JIRA IDs it uses the commit messages which have a format of 2 to 10 characters followed by a dash and then a number, for example: "PROJ-1234". It then checks against the JIRA API to get the details of the ticket and outputs it in a nice format.
+- Node.js (ESM-compatible runtime)
+- Local clone of the target git repository
+- UAT and Production pages that expose the `git-commit` meta tag
+- Optional Jira Cloud credentials for enriched ticket details
 
-Make sure that the changes are related to the app or to any of the dependencies of the app, otherwise it will not show up in the output.
+## Install
 
-If no changes are found, it will output "No changes found between the two environments".
+```bash
+cd /Users/philipvella/work/scripts/git/pnpm-git-changes
+npm install
+```
 
-When the user provides details we need to save them to the .env file so that the next time the user runs the tool, it can fetch the details from the .env file and use them without asking the user again. The user should also have the option to update the details if they want to. Like this we can avoid asking the user for the same details every time they run the tool.
+## Run
 
+```bash
+cd /Users/philipvella/work/scripts/git/pnpm-git-changes
+node src/index.js
+```
 
-### Jira API
+## Configuration behavior
 
-If you provide Jira credentials, the tool will fetch ticket details (summary + status) from Jira Cloud and include them in the output.
-The final output is README-style markdown and each Jira item is rendered as a clickable link using the ticket URL.
+The tool stores configuration in `.env` and offers reuse/update on next run.
 
-You can provide these either via prompts/flags or environment variables:
+Prompted values:
 
-- ATLASSIAN_EMAIL 
-- ATLASSIAN_API_TOKEN 
-- ATLASSIAN_BASE_URL
+1. Production URL
+2. UAT URL
+3. Local repo path (absolute)
+4. App path inside repo (for example `apps/my-app`)
+5. Branch name (stored, currently informational)
+6. Whether to configure Jira credentials
+7. If Jira enabled: Jira base URL, Atlassian email, Atlassian API token
 
-## What is asks for
+Environment variables supported:
 
-1. Production url
-2. UAT url
-3. Repo local path
-4. Application local path (inside the repo)
-5. Ask for JIRA ()
-5. Branch name (defaults to the latest 'origin/master' branch)
-6. Jira base url
-7. (Optional) Jira email + Jira API token (to fetch ticket details)
+- `PROD_URL`
+- `UAT_URL`
+- `REPO_PATH`
+- `APP_PATH`
+- `BRANCH`
+- `ATLASSIAN_BASE_URL`
+- `ATLASSIAN_EMAIL`
+- `ATLASSIAN_API_TOKEN`
 
+## Jira integration
 
-## Nice to have
+- With Jira credentials, each ticket includes title and status from Jira API.
+- Ticket output is markdown and clickable:
+  - `[PROJ-123 - Ticket title](https://your-domain.atlassian.net/browse/PROJ-123)`
+- If Jira lookup fails, ticket ID still appears and the tool continues.
 
-1. Ability to write the markdown output directly to a changelog/readme file inside the target repo.
+## Output shape
+
+The tool prints markdown to stdout (it does not currently write files automatically):
+
+```markdown
+# Changelog
+
+> Generated on YYYY-MM-DD
+> Comparing UAT (`abcdef1`) -> Production (`1234567`)
+
+## 📝 What Changed
+- ...
+- ...
+
+## 🎫 Jira Tickets
+- [PROJ-123 - Title](https://your-domain.atlassian.net/browse/PROJ-123) ✅ `Done`
+```
+
+## Notes
+
+- If both environments point to the same commit, the tool exits with no changes.
+- If no relevant commits remain after filtering, the tool exits with no changes.
+- Jira enrichment is optional; core comparison and ticket extraction still work without it.
