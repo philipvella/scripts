@@ -11,6 +11,8 @@ def generate_description(diff_text):
             "Summarize the following git diff into a concise list. "
             "First output should be a relative title starting with 'chore(XXX-0000): DYNAMIC SUMMARY'. "
             "Then the rest of the output should be, bullet points like this '- [x] '. "
+            "As concise as possible without repetition. Do not include any information that is not directly related to the code changes. "
+            "Focus mostly on the product deliverables so that it is as concise as possible for the reviewer to understand the impact of the changes. "
             "Do not use bold titles or headers. "
             "Focus on product terms and technical changes:\n\n" + diff_text
     )

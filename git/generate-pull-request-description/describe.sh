@@ -22,4 +22,17 @@ if [ -z "$DIFF" ]; then
 fi
 
 # Pass the diff AND the environment variable to the Python script
-echo "$DIFF" | python3 ~/work/scripts/git/generate-pull-request-description/generate_pr.py "$OPENAI_API_KEY"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="$SCRIPT_DIR/.venv/bin/python"
+
+if [ ! -x "$PY" ]; then
+  echo "Python venv not found at $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
+  exit 1
+fi
+
+if ! "$PY" -c "import openai" >/dev/null 2>&1; then
+  echo "Python deps not installed in $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
+  exit 1
+fi
+
+echo "$DIFF" | "$PY" "$SCRIPT_DIR/generate_pr.py" "$OPENAI_API_KEY"
