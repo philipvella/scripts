@@ -10,3 +10,4 @@ security_scan_*.txt
 # Ignore all output folders
 output/
 **/output/
+node_modules
