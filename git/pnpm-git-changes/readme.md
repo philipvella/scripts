@@ -13,7 +13,7 @@
 5. Optionally fetches Jira `summary` and `status` from Jira Cloud API.
 6. Prints markdown output with:
    - `## 📝 What Changed` (human-readable bullet summary)
-   - `## 🎫 Jira Tickets` (clickable ticket links when URL is known)
+   - `## 🎫 Jira Tickets` (clickable ticket links, status badge, and contributor names inline per ticket)
 
 ## Requirements
 
@@ -69,7 +69,8 @@ Environment variables supported:
 
 - With Jira credentials, each ticket includes title and status from Jira API.
 - Ticket output is markdown and clickable:
-  - `[PROJ-123 - Ticket title](https://your-domain.atlassian.net/browse/PROJ-123)`
+  - `[PROJ-123 — Ticket title](https://your-domain.atlassian.net/browse/PROJ-123) ✅ \`Done\` 👤 Jane Smith`
+- Contributors are extracted from git commit authors and shown inline next to each ticket they touched.
 - If Jira lookup fails, ticket ID still appears and the tool continues.
 
 ## Output shape
@@ -87,7 +88,8 @@ The tool prints markdown to stdout (it does not currently write files automatica
 - ...
 
 ## 🎫 Jira Tickets
-- [PROJ-123 - Title](https://your-domain.atlassian.net/browse/PROJ-123) ✅ `Done`
+- [PROJ-123 — Title](https://your-domain.atlassian.net/browse/PROJ-123) ✅ `Done` 👤 Jane Smith
+- [PROJ-124 — Another Title](https://your-domain.atlassian.net/browse/PROJ-124) 🔄 `In Progress` 👤 John Doe, Jane Smith
 ```
 
 ## Notes

@@ -30,26 +30,18 @@ function buildWhatChangedList(relevantCommits, tickets, ticketDetails) {
   const cleanedMessages = relevantCommits.map((c) => cleanCommitMessage(c.message)).filter(Boolean);
   const topChanges = [...new Set(cleanedMessages)].slice(0, 3);
 
-  const firstSentence = `Compared with UAT, production includes ${relevantCommits.length} relevant commit${relevantCommits.length === 1 ? '' : 's'} across ${tickets.length} Jira ticket${tickets.length === 1 ? '' : 's'}.`;
-
-  const secondSentence = topTicketTitles.length > 0
+  const firstSentence = topTicketTitles.length > 0
     ? `The main areas updated are ${topTicketTitles.join(', ')}.`
     : 'These updates are identified directly from commit history and ticket references in the branch.';
 
-  const thirdSentence = topChanges.length > 0
+  const secondSentence = topChanges.length > 0
     ? `Notable implementation changes include ${topChanges.join('; ')}.`
     : 'Detailed commit-level descriptions were limited for this comparison.';
 
-  const moreTickets = tickets.length - topTicketTitles.length;
-  const closingSentence = moreTickets > 0
-    ? `There are ${moreTickets} additional ticket${moreTickets === 1 ? '' : 's'} in the release, all listed in the Jira section below.`
-    : 'All detected tickets are listed below with direct Jira links.';
 
   return [
     `- ${firstSentence}`,
     `- ${secondSentence}`,
-    `- ${thirdSentence}`,
-    `- ${closingSentence}`,
   ];
 }
 
@@ -66,6 +58,23 @@ function statusBadge(status) {
   };
   const icon = map[status] || '🎫';
   return ` ${icon} \`${status}\``;
+}
+
+function buildTicketContributorsMap(relevantCommits) {
+  const JIRA_TICKET_RE = /\b([A-Z]{2,10}-\d+)\b/g;
+  const map = {};
+  for (const commit of relevantCommits) {
+    const author = (commit.author || '').trim();
+    if (!author) continue;
+    const matches = commit.message.match(JIRA_TICKET_RE);
+    if (matches) {
+      for (const ticket of matches) {
+        if (!map[ticket]) map[ticket] = new Set();
+        map[ticket].add(author);
+      }
+    }
+  }
+  return map;
 }
 
 function buildReadmeOutput({ prodCommit, uatCommit, relevantCommits, tickets, ticketDetails, config }) {
@@ -97,16 +106,17 @@ function buildReadmeOutput({ prodCommit, uatCommit, relevantCommits, tickets, ti
   if (tickets.length === 0) {
     lines.push('_No Jira ticket references found in commit messages._');
   } else {
+    const ticketContributors = buildTicketContributorsMap(relevantCommits);
     for (const ticket of tickets) {
       const detail = ticketDetails[ticket];
       const title = detail?.summary && detail.summary !== '(Could not fetch)' ? detail.summary : 'No title available';
       const url = detail?.url || (config.atlassianBaseUrl ? `${config.atlassianBaseUrl.replace(/\/$/, '')}/browse/${ticket}` : '');
       const badge = statusBadge(detail?.status);
       const link = url ? `[${ticket} — ${title}](${url})` : `${ticket} — ${title}`;
-      lines.push(`- ${link}${badge}`);
+      const authors = ticketContributors[ticket] ? ` 👤 ${[...ticketContributors[ticket]].join(', ')}` : '';
+      lines.push(`1. ${link}${badge}${authors}`);
     }
   }
-
 
   return lines.join('\n');
 }

@@ -12,12 +12,12 @@ function git(repoPath, args) {
 
 /**
  * Get an array of commits between fromCommit (exclusive) and toCommit (inclusive).
- * Each commit has: { hash, shortHash, message, files }
+ * Each commit has: { hash, shortHash, message, author, files }
  *
  * @param {string} repoPath  - absolute path to git repo
  * @param {string} fromCommit - older commit (e.g. UAT commit)
  * @param {string} toCommit   - newer commit (e.g. PROD commit)
- * @returns {Promise<Array<{hash: string, shortHash: string, message: string, files: string[]}>>}
+ * @returns {Promise<Array<{hash: string, shortHash: string, message: string, author: string, files: string[]}>>}
  */
 export async function getCommitsWithFiles(repoPath, fromCommit, toCommit) {
   // Fetch to ensure we have all commits
@@ -27,11 +27,11 @@ export async function getCommitsWithFiles(repoPath, fromCommit, toCommit) {
     // Non-fatal – may not have network or remote
   }
 
-  // Get commit list: hash<SEP>message
+  // Get commit list: hash<SEP>message<SEP>author
   const SEP = '|||';
   let logOutput;
   try {
-    logOutput = git(repoPath, `log --pretty=format:"%H${SEP}%s" ${fromCommit}..${toCommit}`);
+    logOutput = git(repoPath, `log --pretty=format:"%H${SEP}%s${SEP}%an" ${fromCommit}..${toCommit}`);
   } catch (err) {
     throw new Error(
       `Could not get git log between ${fromCommit} and ${toCommit}.\n` +
@@ -44,10 +44,11 @@ export async function getCommitsWithFiles(repoPath, fromCommit, toCommit) {
   const lines = logOutput.split('\n').filter(Boolean);
 
   const commits = lines.map((line) => {
-    const idx = line.indexOf(SEP);
-    const hash = line.substring(0, idx);
-    const message = line.substring(idx + SEP.length);
-    return { hash, shortHash: hash.substring(0, 7), message, files: [] };
+    const parts = line.split(SEP);
+    const hash = parts[0];
+    const message = parts[1] || '';
+    const author = parts[2] || '';
+    return { hash, shortHash: hash.substring(0, 7), message, author, files: [] };
   });
 
   // Get changed files for each commit (batch via name-only diff)
