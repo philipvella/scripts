@@ -64,6 +64,7 @@ Environment variables supported:
 - `ATLASSIAN_BASE_URL`
 - `ATLASSIAN_EMAIL`
 - `ATLASSIAN_API_TOKEN`
+- `OPENAI_API_KEY` (optional — enables AI-generated "What Changed" bullets; falls back to static generation when absent)
 
 ## Jira integration
 

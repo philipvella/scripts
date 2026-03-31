@@ -36,6 +36,7 @@ function mergeWithProcess(saved) {
     atlassianEmail: process.env.ATLASSIAN_EMAIL || saved.ATLASSIAN_EMAIL || '',
     atlassianApiToken: process.env.ATLASSIAN_API_TOKEN || saved.ATLASSIAN_API_TOKEN || '',
     atlassianBaseUrl: process.env.ATLASSIAN_BASE_URL || saved.ATLASSIAN_BASE_URL || '',
+    openaiApiKey: process.env.OPENAI_API_KEY || saved.OPENAI_API_KEY || '',
   };
 }
 
@@ -159,6 +160,12 @@ export async function loadConfig() {
         message: 'Configure Jira credentials?',
         default: !!(current.atlassianEmail || updateMode),
       },
+      {
+        type: 'confirm',
+        name: 'configureOpenAI',
+        message: 'Configure OpenAI API key (for AI-generated "What Changed" summary)?',
+        default: !!(current.openaiApiKey || updateMode),
+      },
     ]);
 
     let jiraAnswers = {};
@@ -188,17 +195,33 @@ export async function loadConfig() {
       ]);
     }
 
+    let openaiAnswers = {};
+    if (answers.configureOpenAI) {
+      openaiAnswers = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'openaiApiKey',
+          message: 'OpenAI API key (sk-...):',
+          default: current.openaiApiKey || undefined,
+          validate: (v) => v.trim() ? true : 'Required',
+        },
+      ]);
+    }
+
     const merged = {
       commitSource,
       ...answers,
       ...jiraAnswers,
+      ...openaiAnswers,
       configureJira: undefined,
+      configureOpenAI: undefined,
     };
 
     // Fill blanks from existing if user skipped sections
     if (!merged.atlassianBaseUrl) merged.atlassianBaseUrl = current.atlassianBaseUrl;
     if (!merged.atlassianEmail) merged.atlassianEmail = current.atlassianEmail;
     if (!merged.atlassianApiToken) merged.atlassianApiToken = current.atlassianApiToken;
+    if (!merged.openaiApiKey) merged.openaiApiKey = current.openaiApiKey;
     if (!merged.prodUrl) merged.prodUrl = commitSource === 'url' ? current.prodUrl : '';
     if (!merged.uatUrl) merged.uatUrl = commitSource === 'url' ? current.uatUrl : '';
     if (!merged.prodCommit) merged.prodCommit = commitSource === 'manual' ? current.prodCommit : '';
@@ -217,6 +240,7 @@ export async function loadConfig() {
       ATLASSIAN_EMAIL: merged.atlassianEmail || '',
       ATLASSIAN_API_TOKEN: merged.atlassianApiToken || '',
       ATLASSIAN_BASE_URL: merged.atlassianBaseUrl || '',
+      OPENAI_API_KEY: merged.openaiApiKey || '',
     });
 
     console.log(chalk.green('  ✓ Configuration saved to .env\n'));

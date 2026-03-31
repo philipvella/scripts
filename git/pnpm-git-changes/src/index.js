@@ -6,8 +6,9 @@ import { fetchCommitFromUrl } from './fetcher.js';
 import { getCommitsWithFiles } from './git.js';
 import { filterRelevantCommits } from './pnpm.js';
 import { extractJiraTickets, fetchJiraDetails } from './jira.js';
+import { generateWhatChangedBullets } from './openai-helper.js';
 
-function buildWhatChangedList(relevantCommits, tickets, ticketDetails) {
+async function buildWhatChangedList(relevantCommits, tickets, ticketDetails, config) {
   const cleanTicketTitle = (ticket) => {
     const raw = ticketDetails[ticket]?.summary;
     if (!raw || raw === '(Could not fetch)') return ticket;
@@ -26,18 +27,27 @@ function buildWhatChangedList(relevantCommits, tickets, ticketDetails) {
     .replace(/\s+/g, ' ')
     .trim();
 
+  // ── Try AI-generated bullets ──────────────────────────────────────────────
+  const [aiFirst, aiSecond] = await generateWhatChangedBullets(
+    relevantCommits, tickets, ticketDetails, config
+  );
+
+  // ── Static fallbacks ──────────────────────────────────────────────────────
   const topTicketTitles = tickets.map(cleanTicketTitle).filter(Boolean).slice(0, 3);
   const cleanedMessages = relevantCommits.map((c) => cleanCommitMessage(c.message)).filter(Boolean);
   const topChanges = [...new Set(cleanedMessages)].slice(0, 3);
 
-  const firstSentence = topTicketTitles.length > 0
-    ? `The main areas updated are ${topTicketTitles.join(', ')}.`
-    : 'These updates are identified directly from commit history and ticket references in the branch.';
+  const firstSentence = aiFirst ?? (
+    topTicketTitles.length > 0
+      ? `The main areas updated are ${topTicketTitles.join(', ')}.`
+      : 'These updates are identified directly from commit history and ticket references in the branch.'
+  );
 
-  const secondSentence = topChanges.length > 0
-    ? `Notable implementation changes include ${topChanges.join('; ')}.`
-    : 'Detailed commit-level descriptions were limited for this comparison.';
-
+  const secondSentence = aiSecond ?? (
+    topChanges.length > 0
+      ? `Notable implementation changes include ${topChanges.join('; ')}.`
+      : 'Detailed commit-level descriptions were limited for this comparison.'
+  );
 
   return [
     `- ${firstSentence}`,
@@ -77,7 +87,7 @@ function buildTicketContributorsMap(relevantCommits) {
   return map;
 }
 
-function buildReadmeOutput({ prodCommit, uatCommit, relevantCommits, tickets, ticketDetails, config }) {
+async function buildReadmeOutput({ prodCommit, uatCommit, relevantCommits, tickets, ticketDetails, config }) {
   const date = new Date().toISOString().split('T')[0];
   const lines = [];
 
@@ -94,7 +104,7 @@ function buildReadmeOutput({ prodCommit, uatCommit, relevantCommits, tickets, ti
   if (relevantCommits.length === 0) {
     lines.push('_No relevant changes found._');
   } else {
-    lines.push(...buildWhatChangedList(relevantCommits, tickets, ticketDetails));
+    lines.push(...(await buildWhatChangedList(relevantCommits, tickets, ticketDetails, config)));
   }
 
   lines.push('');
@@ -228,7 +238,7 @@ async function main() {
   }
 
   // ── 7. Print results ───────────────────────────────────────────────────────
-  const output = buildReadmeOutput({
+  const output = await buildReadmeOutput({
     prodCommit,
     uatCommit,
     relevantCommits,
