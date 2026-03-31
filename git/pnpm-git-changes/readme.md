@@ -4,7 +4,7 @@
 
 ## What it does
 
-1. Fetches commit hashes from each environment URL via `<meta name="git-commit" content="...">`.
+1. Fetches commit hashes from each environment URL via `<meta name="git-commit" content="...">`, or accepts manual input of the git hashes and thus not call the website to get the commit hashes.
 2. Reads git history between those commits.
 3. Filters commits to your app scope:
    - Excludes lockfile-only changes.
@@ -19,7 +19,7 @@
 
 - Node.js (ESM-compatible runtime)
 - Local clone of the target git repository
-- UAT and Production pages that expose the `git-commit` meta tag
+- UAT and Production pages that expose the `git-commit` meta tag (only needed when using URL mode)
 - Optional Jira Cloud credentials for enriched ticket details
 
 ## Install
@@ -42,18 +42,22 @@ The tool stores configuration in `.env` and offers reuse/update on next run.
 
 Prompted values:
 
-1. Production URL
-2. UAT URL
-3. Local repo path (absolute)
-4. App path inside repo (for example `apps/my-app`)
-5. Branch name (stored, currently informational)
-6. Whether to configure Jira credentials
-7. If Jira enabled: Jira base URL, Atlassian email, Atlassian API token
+1. Commit source mode (`url` or `manual`)
+2. If `url`: Production URL + UAT URL
+3. If `manual`: Production commit hash + UAT commit hash
+4. Local repo path (absolute)
+5. App path inside repo (for example `apps/my-app`)
+6. Branch name (stored, currently informational)
+7. Whether to configure Jira credentials
+8. If Jira enabled: Jira base URL, Atlassian email, Atlassian API token
 
 Environment variables supported:
 
 - `PROD_URL`
 - `UAT_URL`
+- `PROD_COMMIT`
+- `UAT_COMMIT`
+- `COMMIT_SOURCE` (`url` or `manual`)
 - `REPO_PATH`
 - `APP_PATH`
 - `BRANCH`

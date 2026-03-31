@@ -118,24 +118,35 @@ async function main() {
   const config = await loadConfig();
 
   // ── 2. Fetch git commit hashes from environment meta tags ─────────────────
-  console.log(chalk.cyan('\nFetching git commits from environments...'));
+  console.log(chalk.cyan('\nResolving commits...'));
 
   let prodCommit, uatCommit;
 
-  try {
-    prodCommit = await fetchCommitFromUrl(config.prodUrl);
-    console.log(chalk.green(`  ✓ Production : ${prodCommit}`));
-  } catch (err) {
-    console.error(chalk.red(`  ✗ Failed to fetch production commit: ${err.message}`));
-    process.exit(1);
-  }
+  if (config.commitSource === 'manual') {
+    prodCommit = (config.prodCommit || '').trim();
+    uatCommit = (config.uatCommit || '').trim();
+    if (!prodCommit || !uatCommit) {
+      console.error(chalk.red('  ✗ Manual mode requires both production and UAT commit hashes.'));
+      process.exit(1);
+    }
+    console.log(chalk.green(`  ✓ Production : ${prodCommit} (manual)`));
+    console.log(chalk.green(`  ✓ UAT        : ${uatCommit} (manual)`));
+  } else {
+    try {
+      prodCommit = await fetchCommitFromUrl(config.prodUrl);
+      console.log(chalk.green(`  ✓ Production : ${prodCommit}`));
+    } catch (err) {
+      console.error(chalk.red(`  ✗ Failed to fetch production commit: ${err.message}`));
+      process.exit(1);
+    }
 
-  try {
-    uatCommit = await fetchCommitFromUrl(config.uatUrl);
-    console.log(chalk.green(`  ✓ UAT        : ${uatCommit}`));
-  } catch (err) {
-    console.error(chalk.red(`  ✗ Failed to fetch UAT commit: ${err.message}`));
-    process.exit(1);
+    try {
+      uatCommit = await fetchCommitFromUrl(config.uatUrl);
+      console.log(chalk.green(`  ✓ UAT        : ${uatCommit}`));
+    } catch (err) {
+      console.error(chalk.red(`  ✗ Failed to fetch UAT commit: ${err.message}`));
+      process.exit(1);
+    }
   }
 
   if (prodCommit === uatCommit) {
