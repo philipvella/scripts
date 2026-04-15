@@ -1,0 +1,22 @@
+{
+  "name": "ai-audio-to-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Node.js pipeline to turn one audio file into a simple visual MP4 using OpenAI and FFmpeg.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "transcribe": "node src/transcribe.mjs",
+    "storyboard": "node src/buildStoryboard.mjs",
+    "generate": "node src/generateCharacters.mjs",
+    "render": "node src/renderVideo.mjs",
+    "smoke": "node scripts/smoke-test.mjs"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
+  }
+}
+
