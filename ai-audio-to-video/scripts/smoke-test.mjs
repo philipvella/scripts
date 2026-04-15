@@ -1,14 +1,16 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runCommand } from "../src/utils/exec.mjs";
-import { fileExists } from "../src/utils/io.mjs";
+import { ensureDir, fileExists } from "../src/utils/io.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 
 async function runSmokeTest() {
-  const inputPath = path.join(ROOT_DIR, "input", "audio.mp3");
+  const smokeDir = path.join(ROOT_DIR, "output", ".smoke");
+  await ensureDir(smokeDir);
+  const inputPath = path.join(smokeDir, "audio-smoke.mp3");
 
   await runCommand("ffmpeg", [
     "-y",
@@ -46,4 +48,3 @@ runSmokeTest().catch((error) => {
   console.error(error.message);
   process.exit(1);
 });
-

@@ -99,6 +99,8 @@ node src/index.mjs input/audio.mp3 --mock
 npm run smoke
 ```
 
+`npm run smoke` generates a short synthetic fixture at `output/.smoke/audio-smoke.mp3` and does not overwrite `input/audio.mp3`.
+
 ## Pipeline stages
 
 1. `src/transcribe.mjs`
