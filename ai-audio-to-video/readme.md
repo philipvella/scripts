@@ -7,7 +7,7 @@ Turn one conversational audio file into a simple visual MP4 using OpenAI APIs + 
 - Keeps your original audio unchanged.
 - Transcribes audio into timed segments with diarization-friendly normalization.
 - Builds a short-scene storyboard (roughly 3 to 8 second visual beats).
-- Maps two speakers to recurring characters (`alex`, `sam`).
+- Maps two speakers to recurring characters (`speaker_a`, `speaker_b`).
 - Generates reusable character/background images.
 - Renders a 1280x720 H.264/AAC MP4 with subtitles and speaker switching.
 
@@ -123,18 +123,18 @@ npm run smoke
 
 2. `src/buildStoryboard.mjs`
    - Merges transcript fragments into 3-8s scenes.
-   - Maps speakers to `alex` and `sam`.
+   - Maps speakers to `speaker_a` and `speaker_b`.
    - Writes `output/storyboard.json`:
 
 ```json
 {
   "characters": {
-    "alex": {
-      "displayName": "Alex",
+    "speaker_a": {
+      "displayName": "Speaker A",
       "visualPrompt": "Friendly podcast host..."
     },
-    "sam": {
-      "displayName": "Sam",
+    "speaker_b": {
+      "displayName": "Speaker B",
       "visualPrompt": "Friendly podcast co-host..."
     }
   },
@@ -146,8 +146,8 @@ npm run smoke
       "duration": 4.2,
       "speaker": "speaker_1",
       "subtitle": "Welcome back to the show.",
-      "onScreenCharacter": "alex",
-      "reactionCharacter": "sam",
+      "onScreenCharacter": "speaker_a",
+      "reactionCharacter": "speaker_b",
       "emotion": "neutral",
       "background": "podcast_studio",
       "imagePrompt": "Simple, clean 2D conversation scene..."

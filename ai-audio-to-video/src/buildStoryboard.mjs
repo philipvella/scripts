@@ -151,8 +151,8 @@ export async function buildStoryboard({
   const beats = mergeToBeats(normalized);
 
   const scenes = beats.map((beat, index) => {
-    const onScreenCharacter = beat.speaker === "speaker_1" ? "alex" : "sam";
-    const reactionCharacter = onScreenCharacter === "alex" ? "sam" : "alex";
+    const onScreenCharacter = beat.speaker === "speaker_1" ? "speaker_a" : "speaker_b";
+    const reactionCharacter = onScreenCharacter === "speaker_a" ? "speaker_b" : "speaker_a";
     const subtitle = summarizeSubtitle(beat.text);
     const emotion = EMOTIONS.includes(pickEmotion(beat.text)) ? pickEmotion(beat.text) : "neutral";
     const background = pickBackground(index);

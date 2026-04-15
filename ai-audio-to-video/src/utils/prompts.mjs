@@ -1,13 +1,13 @@
 export const CHARACTER_DEFINITIONS = {
-  alex: {
-    displayName: "Alex",
+  speaker_a: {
+    displayName: "Speaker A",
     visualPrompt:
-      "Friendly podcast host, clean 2D illustration, chest-up framing, plain clothing, neutral lighting."
+      "Gender-neutral androgynous person, ambiguous appearance, no masculine or feminine features, short simple hair, plain casual clothing, clean 2D flat illustration style, chest-up framing, soft neutral lighting, no gender indicators."
   },
-  sam: {
-    displayName: "Sam",
+  speaker_b: {
+    displayName: "Speaker B",
     visualPrompt:
-      "Friendly podcast co-host, clean 2D illustration, chest-up framing, plain clothing, neutral lighting."
+      "Gender-neutral androgynous person, ambiguous appearance, no masculine or feminine features, short simple hair, plain casual clothing, different outfit color from Speaker A, clean 2D flat illustration style, chest-up framing, soft neutral lighting, no gender indicators."
   }
 };
 

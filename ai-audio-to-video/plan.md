@@ -54,13 +54,13 @@ Detailed behaviour:
 - Read output/transcript.json
 - Merge tiny transcript fragments into visual beats of roughly 3 to 8 seconds
 - Map speakers to two stable character ids:
-  speaker_1 => alex
-  speaker_2 => sam
+  speaker_1 => speaker_a
+  speaker_2 => speaker_b
 - Produce output/storyboard.json with:
   {
   characters: {
-  alex: { displayName: "Alex", visualPrompt: "..." },
-  sam: { displayName: "Sam", visualPrompt: "..." }
+  speaker_a: { displayName: "Speaker A", visualPrompt: "..." },
+  speaker_b: { displayName: "Speaker B", visualPrompt: "..." }
   },
   scenes: [
   {
@@ -85,12 +85,12 @@ Detailed behaviour:
 3. generateCharacters.mjs
 - Read output/storyboard.json
 - Use the OpenAI image API to generate:
-    - alex neutral portrait
-    - alex talking
-    - alex listening
-    - sam neutral portrait
-    - sam talking
-    - sam listening
+    - speaker_a neutral portrait
+    - speaker_a talking
+    - speaker_a listening
+    - speaker_b neutral portrait
+    - speaker_b talking
+    - speaker_b listening
     - 2 or 3 simple backgrounds
 - Save assets into output/characters and output/backgrounds
 - Reuse assets instead of generating one image per scene where possible

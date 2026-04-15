@@ -40,11 +40,16 @@ async function buildSceneClip({ scene, sceneIndex, manifest, scenesDir, fps = 30
   const scenePath = path.join(scenesDir, `scene_${String(sceneIndex + 1).padStart(4, "0")}.mp4`);
 
   const filter = [
-    `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0006,1.05)':d=1:s=1280x720:fps=${fps}[bg]`,
-    `[1:v]scale=620:620[active]`,
-    `[2:v]scale=320:320,colorchannelmixer=aa=0.70[react]`,
-    "[bg][active]overlay=x=70:y=50[tmp1]",
-    "[tmp1][react]overlay=x=930:y=350[vout]"
+    // Background: scale to canvas, subtle zoom, convert to rgba so overlays work cleanly.
+    `[0:v]scale=1280:720,zoompan=z='min(zoom+0.0006,1.05)':d=1:s=1280x720:fps=${fps},format=rgba[bg]`,
+    // Active speaker: larger, full opacity, force rgba to honour PNG alpha.
+    `[1:v]scale=620:620,format=rgba[active]`,
+    // Reaction character: smaller, dimmed to 70% opacity via alpha channel.
+    `[2:v]scale=320:320,format=rgba,colorchannelmixer=aa=0.70[react]`,
+    // Composite active speaker over background, then reaction character on top right.
+    // format=auto tells overlay to respect the alpha channel of the top layer.
+    "[bg][active]overlay=format=auto:x=70:y=50[tmp1]",
+    "[tmp1][react]overlay=format=auto:x=930:y=350[vout]"
   ].join(";");
 
   await runCommand("ffmpeg", [

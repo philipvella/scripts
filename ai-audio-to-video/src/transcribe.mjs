@@ -120,6 +120,67 @@ function buildTimedSegmentsFromText(text, audioDurationSeconds) {
   return segments;
 }
 
+async function diarizeWithGPT(client, fullText, audioDurationSeconds) {
+  const duration = audioDurationSeconds ?? estimateDurationFromText(fullText);
+
+  const systemPrompt = `You are an expert conversation transcript analyst specializing in speaker diarization.
+Your task: given a raw transcript of a 2-speaker podcast/interview, split it into speaker-attributed segments.
+
+Rules:
+- There are exactly 2 speakers: SPEAKER_1 (the host who typically leads) and SPEAKER_2 (the guest/co-host who responds).
+- Identify natural speaker turns from context — questions, responses, acknowledgements, topic shifts.
+- Small interjections ("Yeah", "Right", "I mean") belong to the speaker who is responding in that moment.
+- Assign proportional timestamps based on word count, starting at 0 and ending at exactly ${duration} seconds.
+- Segment duration should be between 2 and 20 seconds.
+- Return ONLY valid JSON, no markdown, no explanation.
+
+Required JSON shape:
+{
+  "segments": [
+    { "start": 0.0, "end": 6.2, "speaker": "speaker_1", "text": "..." },
+    { "start": 6.2, "end": 11.5, "speaker": "speaker_2", "text": "..." }
+  ]
+}`;
+
+  const userPrompt = `Total audio duration: ${duration} seconds.\n\nTranscript:\n${fullText}`;
+
+  const completion = await client.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ]
+  });
+
+  const raw = completion.choices?.[0]?.message?.content ?? "{}";
+  const parsed = JSON.parse(raw);
+  const segments = Array.isArray(parsed?.segments) ? parsed.segments : [];
+
+  if (segments.length === 0) {
+    return null;
+  }
+
+  // Normalise and clamp timestamps to be monotonically increasing and within duration.
+  let cursor = 0;
+  return segments
+    .map((seg, index) => {
+      const text = String(seg?.text ?? "").trim();
+      if (!text) return null;
+
+      const start = roundToMs(Math.max(cursor, Number(seg.start) || cursor));
+      const isLast = index === segments.length - 1;
+      const rawEnd = Number(seg.end) || start + 3;
+      const end = roundToMs(isLast ? duration : Math.max(start + 0.5, Math.min(rawEnd, duration)));
+      cursor = end;
+
+      const speaker = String(seg.speaker ?? "").includes("2") ? "speaker_2" : "speaker_1";
+      return { start, end, speaker, text };
+    })
+    .filter(Boolean);
+}
+
 function normalizeTranscriptResponse(response, audioDurationSeconds) {
   const segments = Array.isArray(response?.segments) ? response.segments : [];
 
@@ -276,8 +337,9 @@ export async function transcribeAudio({
   }
 
   let response;
+  let client;
   try {
-    const client = createOpenAIClient();
+    client = createOpenAIClient();
     response = await callTranscriptionWithFallback(client, audioPath, model);
   } catch (error) {
     throw new ApiError(`Transcription failed: ${error.message}`);
@@ -290,7 +352,26 @@ export async function transcribeAudio({
     logStage("transcribe", "Audio duration probe unavailable, using text-based estimate if needed.");
   }
 
-  const normalized = normalizeTranscriptResponse(response, audioDurationSeconds);
+  let normalized = normalizeTranscriptResponse(response, audioDurationSeconds);
+
+  // If the API returned no segments with real speaker data (i.e. text-only fallback),
+  // use GPT-4o to diarize the full transcript intelligently.
+  const hasRealSpeakerData = Array.isArray(response?.segments) && response.segments.length > 0;
+  if (!hasRealSpeakerData && normalized.segments.length > 0) {
+    const fullText = normalized.segments.map((s) => s.text).join(" ");
+    logStage("transcribe", "No speaker data from transcription API — running GPT-4o diarization pass...");
+    try {
+      const diarized = await diarizeWithGPT(client, fullText, audioDurationSeconds);
+      if (diarized && diarized.length > 0) {
+        normalized = { segments: diarized };
+        logStage("transcribe", `Diarization complete: ${diarized.length} speaker segments identified.`);
+      } else {
+        logStage("transcribe", "Diarization returned no segments, keeping chunk-based fallback.");
+      }
+    } catch (error) {
+      logStage("transcribe", `Diarization failed (${error.message}), keeping chunk-based fallback.`);
+    }
+  }
   await writeJson(transcriptPath, normalized);
   logStage("transcribe", `Transcript saved to ${transcriptPath}`);
 
