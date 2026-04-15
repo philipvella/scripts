@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { ApiError, InputError } from "./utils/errors.mjs";
 import { assertFileExists, ensureDir, fileExists, readJson, writeJson } from "./utils/io.mjs";
 import { logStage } from "./utils/logger.mjs";
@@ -56,6 +56,20 @@ async function createPlaceholderImage(targetPath, color) {
   ]);
 }
 
+async function clearDir(dirPath) {
+  await rm(dirPath, { recursive: true, force: true });
+  await ensureDir(dirPath);
+}
+
+async function wasGeneratedWithMock(manifestPath) {
+  try {
+    const existing = await readJson(manifestPath);
+    return existing?._meta?.mock === true;
+  } catch {
+    return null; // manifest doesn't exist yet
+  }
+}
+
 export async function generateCharacters({
   storyboardPath = "output/storyboard.json",
   outputPath = "output/assets-manifest.json",
@@ -68,8 +82,18 @@ export async function generateCharacters({
   const backgroundsDir = toAbs("output/backgrounds");
 
   await assertFileExists(sourcePath, InputError, `Storyboard not found: ${sourcePath}`);
-  await ensureDir(charactersDir);
-  await ensureDir(backgroundsDir);
+
+  // Detect stale mock assets and wipe them before a real run (and vice-versa).
+  const previousMock = await wasGeneratedWithMock(manifestPath);
+  const modeChanged = previousMock !== null && previousMock !== mock;
+  if (modeChanged) {
+    logStage("assets", `Mode changed (mock: ${previousMock} → ${mock}). Clearing cached assets.`);
+    await clearDir(charactersDir);
+    await clearDir(backgroundsDir);
+  } else {
+    await ensureDir(charactersDir);
+    await ensureDir(backgroundsDir);
+  }
 
   const storyboard = await readJson(sourcePath);
   const scenes = Array.isArray(storyboard?.scenes) ? storyboard.scenes : [];
@@ -77,6 +101,7 @@ export async function generateCharacters({
   const characters = Object.keys(CHARACTER_DEFINITIONS);
   const states = ["neutral", "talking", "listening"];
   const manifest = {
+    _meta: { mock },
     characters: {},
     backgrounds: {}
   };
@@ -94,16 +119,19 @@ export async function generateCharacters({
       manifest.characters[characterId][state] = outputFile;
 
       if (await fileExists(outputFile)) {
+        logStage("assets", `Reusing cached: ${path.basename(outputFile)}`);
         continue;
       }
 
       if (mock) {
         const color = characterId === "alex" ? "#3A86FF" : "#FF006E";
         await createPlaceholderImage(outputFile, color);
+        logStage("assets", `Mock placeholder created: ${path.basename(outputFile)}`);
         continue;
       }
 
-      const prompt = `${CHARACTER_DEFINITIONS[characterId].visualPrompt} Pose: ${state}. Clean background, single person, no text.`;
+      logStage("assets", `Generating image: ${characterId} / ${state}`);
+      const prompt = `${CHARACTER_DEFINITIONS[characterId].visualPrompt} Pose: ${state}. Clean white background, single person, no text.`;
       try {
         const imageBuffer = await generateImageBuffer(client, prompt, imageModel);
         await writeFile(outputFile, imageBuffer);
@@ -123,15 +151,18 @@ export async function generateCharacters({
     manifest.backgrounds[backgroundId] = outputFile;
 
     if (await fileExists(outputFile)) {
+      logStage("assets", `Reusing cached: ${path.basename(outputFile)}`);
       continue;
     }
 
     if (mock) {
       const color = backgroundId === "podcast_studio" ? "#0B132B" : backgroundId === "living_room" ? "#1C2541" : "#5BC0BE";
       await createPlaceholderImage(outputFile, color);
+      logStage("assets", `Mock background created: ${backgroundId}`);
       continue;
     }
 
+    logStage("assets", `Generating background: ${backgroundId}`);
     const prompt = BACKGROUND_PROMPTS[backgroundId] || BACKGROUND_PROMPTS.simple_gradient;
     try {
       const imageBuffer = await generateImageBuffer(client, prompt, imageModel);

@@ -8,11 +8,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "start": "node src/index.mjs",
-    "transcribe": "node src/transcribe.mjs",
-    "storyboard": "node src/buildStoryboard.mjs",
-    "generate": "node src/generateCharacters.mjs",
-    "render": "node src/renderVideo.mjs",
+    "start": "node --env-file=.env src/index.mjs",
+    "transcribe": "node --env-file=.env src/transcribe.mjs",
+    "storyboard": "node --env-file=.env src/buildStoryboard.mjs",
+    "generate": "node --env-file=.env src/generateCharacters.mjs",
+    "render": "node --env-file=.env src/renderVideo.mjs",
     "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
