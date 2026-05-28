@@ -9,7 +9,7 @@
     "install:deps": "npm install",
     "generate": "node generate-status-update.js",
     "generate:env": "node generate-status-update-with-env.js",
-    "generate:today": "node generate-status-update-with-env.js status-$(date +%Y-%m-%d).md"
+    "generate:today": "node generate-status-update-with-env.js output/status-$(date +%Y-%m-%d).md"
   },
   "dependencies": {
     "dotenv": "^16.0.0"
