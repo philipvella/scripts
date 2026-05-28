@@ -1,0 +1,22 @@
+{
+  "name": "jira-status-update-generator",
+  "version": "1.0.0",
+  "description": "Generate Jira status updates using OpenAI",
+  "main": "generate-status-update.js",
+  "type": "commonjs",
+  "scripts": {
+    "generate": "node generate-status-update.js",
+    "generate:output": "node generate-status-update.js status-update.md"
+  },
+  "keywords": [
+    "jira",
+    "openai",
+    "status-update"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+
