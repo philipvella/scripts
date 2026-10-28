@@ -3,7 +3,7 @@ import importlib.util
 import io
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import httpx
 from openai import AuthenticationError, BadRequestError, NotFoundError, RateLimitError
@@ -17,6 +17,35 @@ class GenerateDescriptionErrorTests(unittest.TestCase):
         with patch("sys.argv", [str(path), "test-key"]):
             spec.loader.exec_module(self.module)
         self.addCleanup(self.module.client.close)
+
+    def test_title_requests_ai_generated_summary_from_diff(self):
+        diff = (
+            "diff --git a/checkout.py b/checkout.py\n"
+            "--- a/checkout.py\n"
+            "+++ b/checkout.py\n"
+            "@@ -1 +1 @@\n"
+            "-timeout = 5\n"
+            "+timeout = 30\n"
+        )
+        description = (
+            "chore(PAY-1234): increase checkout timeout\n"
+            "- [x] Allow more time for checkout requests"
+        )
+        response = Mock(choices=[Mock(message=Mock(content=description))])
+        stdout = io.StringIO()
+        with patch.object(self.module, "ticket", "PAY-1234"), \
+                patch.object(self.module.client.chat.completions, "create", return_value=response) as create, \
+                contextlib.redirect_stdout(stdout):
+            self.module.generate_description(diff)
+
+        prompt = create.call_args.kwargs["messages"][0]["content"]
+        self.assertIn("PR title starting with 'chore(PAY-1234): '", prompt)
+        self.assertIn("summary you generate from the actual diff", prompt)
+        self.assertIn("not a placeholder", prompt)
+        self.assertNotIn("chore(PAY-1234): DYNAMIC SUMMARY", prompt)
+        self.assertIn("'- [x] '", prompt)
+        self.assertTrue(prompt.endswith(diff))
+        self.assertEqual(stdout.getvalue(), description + "\n")
 
     def test_api_errors_include_diagnostics_and_recovery_guidance(self):
         cases = [

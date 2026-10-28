@@ -31,7 +31,9 @@ def generate_description(diff_text):
     # Precise instructions to match the style you liked
     prompt = (
             "Summarize the following git diff into a concise list. "
-            f"First output should be a relative title starting with 'chore({ticket}): DYNAMIC SUMMARY'. "
+            f"The first line must be a PR title starting with 'chore({ticket}): ' "
+            "followed by a concise, specific summary you generate from the actual diff. "
+            "Write the summary itself, not a placeholder or the words 'dynamic summary'. "
             "Then the rest of the output should be, bullet points like this '- [x] '. "
             "As concise as possible without repetition. Do not include any information that is not directly related to the code changes. "
             "Focus mostly on the product deliverables so that it is as concise as possible for the reviewer to understand the impact of the changes. "
