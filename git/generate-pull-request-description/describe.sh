@@ -9,7 +9,7 @@ if [ -z "$1" ] || [ -z "$2" ]; then
   echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --model gpt-4-turbo"
   echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --base origin/main"
   echo ""
-  echo "Models: gpt-4-turbo (default, 40k TPM), gpt-4o (30k TPM), gpt-3.5-turbo (90k TPM, cheap)"
+  echo "Models: gpt-4-turbo (default), gpt-4o, gpt-4o-mini"
   echo "Base branch: origin/master (default)"
   exit 1
 fi
@@ -53,8 +53,14 @@ done
 # Change directory to the repo path
 cd "$REPO_PATH" || { echo "Directory not found"; exit 1; }
 
-# Generate the diff
-DIFF=$(git diff $(git merge-base $BASE_BRANCH $BRANCH)..$BRANCH)
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo "OPENAI_API_KEY is not set. Export it before running this script." >&2
+  exit 1
+fi
+
+# Generate the diff against the target branch
+# This captures the net code changes to merge, not per-commit messages.
+DIFF=$(git diff "$BASE_BRANCH...$BRANCH")
 
 if [ -z "$DIFF" ]; then
   echo "No changes found."
