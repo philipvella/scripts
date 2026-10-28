@@ -14,7 +14,7 @@ def _error_code_from_exception(exc):
     """Try to extract provider error code from OpenAI SDK exceptions."""
     body = getattr(exc, "body", None)
     if isinstance(body, dict):
-        error = body.get("error")
+        error = body.get("error", body)
         if isinstance(error, dict):
             return error.get("code")
     return None
@@ -47,29 +47,34 @@ def generate_description(diff_text):
             messages=[{"role": "user", "content": prompt}]
         )
         print(response.choices[0].message.content)
-    except RateLimitError as e:
-        # 429 can be transient rate limiting or hard quota exhaustion.
-        code = _error_code_from_exception(e)
-        if code == "insufficient_quota":
-            print("❌ OpenAI quota exceeded (insufficient_quota).", file=sys.stderr)
-            print("Check billing/credits for the API key, then retry.", file=sys.stderr)
-        else:
-            print("❌ Rate limited by OpenAI. Retry shortly or reduce diff size.", file=sys.stderr)
-        sys.exit(1)
-    except AuthenticationError:
-        print("❌ OpenAI authentication failed. Verify OPENAI_API_KEY is set and valid.", file=sys.stderr)
-        sys.exit(1)
-    except BadRequestError as e:
+    except APIStatusError as e:
         code = _error_code_from_exception(e)
         if code == "model_not_found":
-            print(f"❌ Model '{model}' was not found or not accessible for this API key.", file=sys.stderr)
-            print("Try --model gpt-4o-mini (or another enabled model).", file=sys.stderr)
+            print(f"❌ Model '{model}' was not found or not accessible for this API key/project.", file=sys.stderr)
+            print("Retry with --model <enabled-model> (for example, --model gpt-4o-mini).", file=sys.stderr)
+            print("If that also fails, check model access for the API key's project.", file=sys.stderr)
+        elif isinstance(e, RateLimitError) and code == "insufficient_quota":
+            print("❌ OpenAI quota exceeded (insufficient_quota).", file=sys.stderr)
+            print("Check billing/credits for the API key, then retry.", file=sys.stderr)
+        elif isinstance(e, RateLimitError):
+            print("❌ Rate limited by OpenAI. Retry shortly or reduce diff size.", file=sys.stderr)
+        elif isinstance(e, AuthenticationError):
+            print("❌ OpenAI authentication failed. Verify OPENAI_API_KEY is set and valid.", file=sys.stderr)
+        elif isinstance(e, BadRequestError):
+            print("❌ Invalid request to OpenAI API. Check the provider message below.", file=sys.stderr)
         else:
-            print(f"❌ Invalid request to OpenAI API: {e}", file=sys.stderr)
-        sys.exit(1)
-    except APIStatusError as e:
-        print(f"❌ OpenAI API error (status {e.status_code}).", file=sys.stderr)
+            print(f"❌ OpenAI API error (status {e.status_code}).", file=sys.stderr)
+            if e.status_code == 404:
+                print("Check the provider message for model access issues and verify OPENAI_BASE_URL if set.", file=sys.stderr)
+
+        print(f"Status: {e.status_code}", file=sys.stderr)
         print(f"URL: {e.request.url}", file=sys.stderr)
+        print(f"Model: {model}", file=sys.stderr)
+        if code:
+            print(f"Error code: {code}", file=sys.stderr)
+        print(f"Provider message: {e.message}", file=sys.stderr)
+        if e.request_id:
+            print(f"Request ID: {e.request_id}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}", file=sys.stderr)
