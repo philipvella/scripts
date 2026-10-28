@@ -39,8 +39,7 @@ def generate_description(diff_text):
             "Focus on product terms and technical changes:\n\n" + diff_text
     )
 
-    # Use gpt-4-turbo for better rate limit handling (40k TPM instead of 30k for gpt-4o)
-    model = os.getenv("OPENAI_MODEL", "gpt-4-turbo")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     try:
         response = client.chat.completions.create(

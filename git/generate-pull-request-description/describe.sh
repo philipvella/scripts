@@ -6,10 +6,10 @@ if [ -z "$1" ] || [ -z "$2" ]; then
   echo ""
   echo "Examples:"
   echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF"
-  echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --model gpt-4-turbo"
+  echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --model gpt-4o-mini"
   echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --base origin/main"
   echo ""
-  echo "Models: gpt-4-turbo (default), gpt-4o, gpt-4o-mini"
+  echo "Models: gpt-4o-mini (default), gpt-4o, gpt-4-turbo"
   echo "Base branch: origin/master (default)"
   exit 1
 fi
@@ -22,7 +22,7 @@ BASE_BRANCH="origin/master" # default
 TICKET=$(echo "$BRANCH" | sed 's|.*/||')
 
 # Parse optional flags
-OPENAI_MODEL="gpt-4-turbo"  # default
+OPENAI_MODEL="gpt-4o-mini"  # default
 shift 2
 while [ "$#" -gt 0 ]; do
   case "$1" in
