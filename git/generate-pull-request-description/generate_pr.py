@@ -70,6 +70,7 @@ def generate_description(diff_text):
         sys.exit(1)
     except APIStatusError as e:
         print(f"❌ OpenAI API error (status {e.status_code}).", file=sys.stderr)
+        print(f"URL: {e.request.url}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}", file=sys.stderr)
