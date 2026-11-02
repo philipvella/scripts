@@ -1,3 +1,4 @@
+import fcntl
 import itertools
 import json
 import os
@@ -6,6 +7,7 @@ import pty
 import select
 import shlex
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -114,6 +116,7 @@ class DescribeTests(unittest.TestCase):
 
     def run_terminal_menu(self, keys):
         master, slave = pty.openpty()
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 120, 0, 0))
         original = termios.tcgetattr(slave)
         process = subprocess.Popen(
             ["bash", str(self.tool / "describe.sh")],
@@ -121,18 +124,39 @@ class DescribeTests(unittest.TestCase):
             stdin=slave, stderr=slave, stdout=subprocess.PIPE, text=True,
         )
         captured = b""
+
+        def read():
+            # Answer cursor-position requests like a real terminal.
+            data = os.read(master, 4096)
+            if b"\x1b[6n" in data:
+                os.write(master, b"\x1b[1;1R" * data.count(b"\x1b[6n"))
+            return data
+
         try:
             deadline = time.monotonic() + 10
-            while b"Choose a repository (Up/Down, Enter, or number): " not in captured:
+            while b"Repository:" not in captured:
                 if time.monotonic() >= deadline:
                     self.fail(f"Menu not shown: {captured!r}")
                 if select.select([master], [], [], 0.1)[0]:
-                    captured += os.read(master, 4096)
-            os.write(master, keys)
+                    captured += read()
+            for key in keys:
+                if isinstance(key, tuple):
+                    marker, key = key
+                    deadline = time.monotonic() + 10
+                    while marker not in captured.rsplit(b"\x1b[?2004l", 1)[-1]:
+                        if time.monotonic() >= deadline:
+                            self.fail(f"{marker!r} not shown: {captured!r}")
+                        if select.select([master], [], [], 0.05)[0]:
+                            captured += read()
+                os.write(master, key)
+                pause = time.monotonic() + 0.3
+                while time.monotonic() < pause:
+                    if select.select([master], [], [], 0.05)[0]:
+                        captured += read()
             deadline = time.monotonic() + 10
             while process.poll() is None:
                 if select.select([master], [], [], 0.1)[0]:
-                    captured += os.read(master, 4096)
+                    captured += read()
                 if time.monotonic() >= deadline:
                     self.fail(f"Menu did not finish: {captured!r}")
             stdout, _ = process.communicate(timeout=1)
@@ -141,7 +165,7 @@ class DescribeTests(unittest.TestCase):
                 original[3] & (termios.ICANON | termios.ECHO),
             )
             while select.select([master], [], [], 0)[0]:
-                captured += os.read(master, 4096)
+                captured += read()
             return subprocess.CompletedProcess(
                 process.args, process.returncode, stdout, captured.decode()
             )
@@ -159,28 +183,35 @@ class DescribeTests(unittest.TestCase):
         self.assert_generated(self.run_script(
             "--repo", second, "--base", "main", "--branch", "chore/A20-195"
         ), repo=second)
-        self.assert_generated(self.run_terminal_menu(b"\x1b[B\n\n"), repo=second)
-        self.assert_generated(self.run_terminal_menu(b"\x1b[B\x1b[A\n\n"))
-        self.assert_generated(self.run_terminal_menu(b"\n\n"))
+        self.assert_generated(self.run_terminal_menu([b"\x1b[B", b"\r", b"\r"]), repo=second)
+        self.assert_generated(self.run_terminal_menu([b"\x1b[B", b"\x1b[A", b"\r", b"\r"]))
+        self.assert_generated(self.run_terminal_menu([b"\r", b"\r"]))
 
-    def test_terminal_arrows_can_add_repo(self):
+    def test_terminal_can_add_repo_with_suggested_base(self):
         self.save_first_repo()
         second = self.make_repo("second")
         result = self.run_terminal_menu(
-            b"\x1b[A\n" + f"{second}\nmain\n\n".encode()
+            [b"0", b"\r", (b"Repository path", str(second).encode()), b"\r",
+             (b"Base branch", b"\r"), (b"Branch to describe", b"\r")]
         )
         self.assert_generated(result, repo=second)
+        self.assertIn("Tab: complete", result.stderr)
+        self.assertEqual(json.loads(self.config.read_text())[str(second)], "main")
 
-    def test_terminal_numbers_invalid_selection_and_backspace(self):
+    def test_terminal_number_shortcuts_and_invalid_branch_is_rejected(self):
         self.save_first_repo()
-        self.assert_generated(self.run_terminal_menu(b"99\n21\x7f\x7f1\n\n"))
-        self.assert_generated(self.run_terminal_menu(b"1\n\n"))
+        self.assert_generated(self.run_terminal_menu([b"9", b"1", b"\r", b"\r"]))
+        result = self.run_terminal_menu(
+            [b"1", b"\r", b"\x15", b"nope", b"\r", b"\x15", b"chore/A20-195", b"\r"]
+        )
+        self.assert_generated(result)
+        self.assertIn("is not a branch or commit", result.stderr)
 
-    def test_terminal_eof_restores_terminal(self):
+    def test_terminal_ctrl_c_cancels_and_restores_terminal(self):
         self.save_first_repo()
-        result = self.run_terminal_menu(b"\x04")
+        result = self.run_terminal_menu([b"\x03"])
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Input ended.", result.stderr)
+        self.assertIn("Cancelled.", result.stderr)
 
     def test_blank_branch_uses_selected_repos_current_branch(self):
         self.assert_generated(self.run_script(input=f"{self.repo}\nmain\n\n"))

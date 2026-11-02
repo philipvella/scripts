@@ -6,20 +6,28 @@ Run `./setup.sh` once and export `OPENAI_API_KEY`, then start the interactive fl
 ~/work/scripts/git/generate-pull-request-description/describe.sh
 ```
 
-On first use, enter the repository path, base branch (such as `origin/main`),
-and branch to describe. The repository and base are saved locally. Later runs
-show a numbered repository menu; choose a saved repository and enter the branch
-to describe, or choose `0` to add another repository.
+Prompts use [questionary](https://github.com/tmbakker/questionary), the same
+style of interactive CLI used by tools such as `npm init` and Yeoman:
 
-In a terminal, use **Up/Down arrows** to move between repositories (including
-the add-new option), then **Enter** to confirm. You can also type a menu number
-and press **Enter**. Piped input and terminals with `TERM=dumb` use numbers only.
+- **Repository menu**: Up/Down arrows or a number shortcut, then **Enter**.
+  Choose `0) + Add a new repository` to add another one. With more than nine
+  saved repositories, type to filter instead.
+- **Repository path**: **Tab** completes directories (`~` is expanded). The
+  path must be a Git repository.
+- **Base branch** (new repositories only): pre-filled with `origin/main` (or
+  `origin/master`/`main`/`master`); **Tab** completes local and remote branches.
+- **Branch to describe**: pre-filled with the repository's current branch, so
+  **Enter** accepts it; **Tab** completes local branches.
+- Invalid paths and branches are rejected inline before continuing. A hint bar
+  shows the available keys, and **Ctrl-C** cancels.
 
-The branch prompt dynamically shows the selected repository's current active
-branch. Press **Enter** without typing to use it, or type another branch.
-This uses the selected repository's checkout, not
-the directory you launched the script from. With a detached HEAD, you must enter
-a branch explicitly.
+The repository and base are saved locally, so later runs need only two Enter
+presses. The current branch comes from the selected repository's checkout, not
+the directory you launched the script from. With a detached HEAD, you must type
+a branch.
+
+Piped input, missing `questionary`, or `TERM=dumb` fall back to plain numbered
+prompts. After pulling this change, rerun `./setup.sh` to install `questionary`.
 
 You can also supply any or all values by name, in any order:
 

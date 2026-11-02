@@ -9,8 +9,9 @@ usage() {
   echo "Missing values are prompted for. Repositories and their base branches are saved"
   echo "in \${XDG_CONFIG_HOME:-\$HOME/.config}/generate-pull-request-description/repos.json."
   echo "Use --base to update a repository's saved base branch."
-  echo "Choose saved repositories with Up/Down and Enter, or type a menu number."
-  echo "At the branch prompt, Enter uses the repository's current branch."
+  echo "Choose saved repositories with Up/Down or a number, then Enter."
+  echo "Tab completes paths and branches; Enter at the branch prompt uses the current branch."
+  echo "Ctrl-C cancels."
   echo "Examples:"
   echo "  ./describe.sh --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
   echo "  ./describe.sh --repo /Users/philipvella/work/BFF --model gpt-4o-mini --branch chore/PAY-8073"
@@ -105,7 +106,7 @@ if [ -z "$DIFF" ]; then
 fi
 
 # Pass the diff AND the environment variable to the Python script
-if ! "$PY" -c "import openai" >/dev/null 2>&1; then
+if ! "$PY" -c "import openai, questionary" >/dev/null 2>&1; then
   echo "Python deps not installed in $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
   exit 1
 fi
