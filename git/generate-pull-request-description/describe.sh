@@ -1,54 +1,71 @@
 #!/bin/bash
 
-# Check for both parameters
-if [ -z "$1" ] || [ -z "$2" ]; then
-  echo "Usage: ./describe.sh <branch-name> <repo-path> [--model <model>] [--base <base-branch>]"
+usage() {
+  echo "Usage: ./describe.sh --branch <branch-name> --repo <repo-path> [--model <model>] [--base <base-branch>]"
+  echo "       ./describe.sh <branch-name> <repo-path> [--model <model>] [--base <base-branch>]"
   echo ""
+  echo "Named options can be passed in any order."
   echo "Examples:"
-  echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF"
-  echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --model gpt-4o-mini"
-  echo "  ./describe.sh chore/PAY-8073 /Users/philipvella/work/BFF --base origin/main"
+  echo "  ./describe.sh --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
+  echo "  ./describe.sh --repo /Users/philipvella/work/BFF --model gpt-4o-mini --branch chore/PAY-8073"
+  echo "  ./describe.sh --base origin/main --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
   echo ""
   echo "Models: gpt-4o-mini (default), gpt-4o, gpt-4-turbo"
   echo "Base branch: origin/master (default)"
-  exit 1
-fi
+}
 
-BRANCH=$1
-REPO_PATH=$2
+BRANCH=""
+REPO_PATH=""
 BASE_BRANCH="origin/master" # default
-
-# Extract ticket number from branch name (e.g., "chore/PAY-8073" -> "PAY-8073")
-TICKET=$(echo "$BRANCH" | sed 's|.*/||')
-
-# Parse optional flags
 OPENAI_MODEL="gpt-4o-mini"  # default
-shift 2
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --model)
-      if [ -z "$2" ]; then
-        echo "Missing value for --model" >&2
+    --branch|--repo|--model|--base)
+      if [ "$#" -lt 2 ] || [ -z "$2" ] || [[ "$2" == --* ]]; then
+        echo "Missing value for $1" >&2
         exit 1
       fi
-      OPENAI_MODEL="$2"
+      case "$1" in
+        --branch) BRANCH="$2" ;;
+        --repo) REPO_PATH="$2" ;;
+        --model) OPENAI_MODEL="$2" ;;
+        --base) BASE_BRANCH="$2" ;;
+      esac
       shift 2
       ;;
-    --base)
-      if [ -z "$2" ]; then
-        echo "Missing value for --base" >&2
-        exit 1
-      fi
-      BASE_BRANCH="$2"
-      shift 2
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 1
       ;;
     *)
-      echo "Unknown option: $1" >&2
-      echo "Usage: ./describe.sh <branch-name> <repo-path> [--model <model>] [--base <base-branch>]" >&2
-      exit 1
+      if [ -z "$BRANCH" ]; then
+        BRANCH="$1"
+      elif [ -z "$REPO_PATH" ]; then
+        REPO_PATH="$1"
+      else
+        echo "Unexpected argument: $1" >&2
+        usage >&2
+        exit 1
+      fi
+      shift
       ;;
   esac
 done
+
+if [ -z "$BRANCH" ] || [ -z "$REPO_PATH" ]; then
+  echo "Both --branch and --repo are required (or use <branch-name> <repo-path>)." >&2
+  usage >&2
+  exit 1
+fi
+
+# Extract ticket number from branch name (e.g., "chore/PAY-8073" -> "PAY-8073")
+TICKET=$(echo "$BRANCH" | sed 's|.*/||')
 
 # Change directory to the repo path
 cd "$REPO_PATH" || { echo "Directory not found"; exit 1; }
