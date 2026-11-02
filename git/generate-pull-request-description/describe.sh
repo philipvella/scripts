@@ -1,22 +1,26 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: ./describe.sh --branch <branch-name> --repo <repo-path> [--model <model>] [--base <base-branch>]"
+  echo "Usage: ./describe.sh"
+  echo "       ./describe.sh --branch <branch-name> --repo <repo-path> [--model <model>] [--base <base-branch>]"
   echo "       ./describe.sh <branch-name> <repo-path> [--model <model>] [--base <base-branch>]"
   echo ""
   echo "Named options can be passed in any order."
+  echo "Missing values are prompted for. Repositories and their base branches are saved"
+  echo "in \${XDG_CONFIG_HOME:-\$HOME/.config}/generate-pull-request-description/repos.json."
+  echo "Use --base to update a repository's saved base branch."
   echo "Examples:"
   echo "  ./describe.sh --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
   echo "  ./describe.sh --repo /Users/philipvella/work/BFF --model gpt-4o-mini --branch chore/PAY-8073"
   echo "  ./describe.sh --base origin/main --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
   echo ""
   echo "Models: gpt-4o-mini (default), gpt-4o, gpt-4-turbo"
-  echo "Base branch: origin/master (default)"
+  echo "Base branch: saved per repository; prompted for on first use"
 }
 
 BRANCH=""
 REPO_PATH=""
-BASE_BRANCH="origin/master" # default
+BASE_BRANCH=""
 OPENAI_MODEL="gpt-4o-mini"  # default
 
 while [ "$#" -gt 0 ]; do
@@ -58,11 +62,22 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ -z "$BRANCH" ] || [ -z "$REPO_PATH" ]; then
-  echo "Both --branch and --repo are required (or use <branch-name> <repo-path>)." >&2
-  usage >&2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
+PY="$SCRIPT_DIR/.venv/bin/python"
+
+if [ ! -x "$PY" ]; then
+  echo "Python venv not found at $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
   exit 1
 fi
+
+if ! SETTINGS=$("$PY" "$SCRIPT_DIR/repo_config.py" --repo "$REPO_PATH" --base "$BASE_BRANCH" --branch "$BRANCH"); then
+  exit 1
+fi
+{
+  IFS= read -r REPO_PATH
+  IFS= read -r BASE_BRANCH
+  IFS= read -r BRANCH
+} <<< "$SETTINGS"
 
 # Extract ticket number from branch name (e.g., "chore/PAY-8073" -> "PAY-8073")
 TICKET=$(echo "$BRANCH" | sed 's|.*/||')
@@ -77,7 +92,10 @@ fi
 
 # Generate the diff against the target branch
 # This captures the net code changes to merge, not per-commit messages.
-DIFF=$(git diff "$BASE_BRANCH...$BRANCH")
+if ! DIFF=$(git diff "$BASE_BRANCH...$BRANCH"); then
+  echo "Could not generate the diff for $BASE_BRANCH...$BRANCH." >&2
+  exit 1
+fi
 
 if [ -z "$DIFF" ]; then
   echo "No changes found."
@@ -85,14 +103,6 @@ if [ -z "$DIFF" ]; then
 fi
 
 # Pass the diff AND the environment variable to the Python script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PY="$SCRIPT_DIR/.venv/bin/python"
-
-if [ ! -x "$PY" ]; then
-  echo "Python venv not found at $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
-  exit 1
-fi
-
 if ! "$PY" -c "import openai" >/dev/null 2>&1; then
   echo "Python deps not installed in $SCRIPT_DIR/.venv. Run: $SCRIPT_DIR/setup.sh" >&2
   exit 1
