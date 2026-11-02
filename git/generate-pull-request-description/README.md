@@ -11,6 +11,10 @@ and branch to describe. The repository and base are saved locally. Later runs
 show a numbered repository menu; choose a saved repository and enter the branch
 to describe, or choose `0` to add another repository.
 
+In a terminal, use **Up/Down arrows** to move between repositories (including
+the add-new option), then **Enter** to confirm. You can also type a menu number
+and press **Enter**. Piped input and terminals with `TERM=dumb` use numbers only.
+
 The branch prompt dynamically shows the selected repository's current active
 branch. Press **Enter** without typing to use it, or type another branch.
 This uses the selected repository's checkout, not

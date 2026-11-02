@@ -2,9 +2,12 @@ import argparse
 import json
 import os
 from pathlib import Path
+import select
 import subprocess
 import sys
 import tempfile
+import termios
+import tty
 
 
 def prompt(label, default=""):
@@ -77,23 +80,69 @@ def prompt_branch(repo):
     )
 
 
+def choose_repo(repos):
+    entries = list(repos)
+    labels = [f"{path} (base: {repos[path]})" for path in entries]
+    labels.append("Add a new repository")
+    numbers = [str(index) for index in range(1, len(entries) + 1)] + ["0"]
+    print("Saved repositories:", file=sys.stderr)
+    for number, label in zip(numbers, labels):
+        print(f"  {number}) {label}", file=sys.stderr)
+
+    if not sys.stdin.isatty() or not sys.stderr.isatty() or os.environ.get("TERM") == "dumb":
+        while True:
+            choice = prompt("Choose a repository: ")
+            if choice in numbers:
+                index = numbers.index(choice)
+                return entries[index] if index < len(entries) else ""
+            print("Choose a listed repository number or 0.", file=sys.stderr)
+
+    descriptor = sys.stdin.fileno()
+    original = termios.tcgetattr(descriptor)
+    selected = 0
+    digits = ""
+    try:
+        tty.setcbreak(descriptor)
+        while True:
+            display = digits or f"{numbers[selected]}) {labels[selected]}"
+            print(
+                f"\r\033[KChoose a repository (Up/Down, Enter, or number): {display}",
+                end="", file=sys.stderr, flush=True,
+            )
+            key = os.read(descriptor, 1)
+            if key in (b"", b"\x04"):
+                raise ValueError("Input ended. Supply --repo for unattended use.")
+            if key in (b"\r", b"\n"):
+                if digits:
+                    if digits not in numbers:
+                        print("\nChoose a listed repository number or 0.", file=sys.stderr)
+                        digits = ""
+                        continue
+                    selected = numbers.index(digits)
+                return entries[selected] if selected < len(entries) else ""
+            if key == b"\x1b":
+                sequence = b""
+                for _ in range(2):
+                    if not select.select([descriptor], [], [], 0.1)[0]:
+                        break
+                    sequence += os.read(descriptor, 1)
+                if sequence in (b"[A", b"OA", b"[B", b"OB"):
+                    selected = (selected + (-1 if sequence[-1:] == b"A" else 1)) % len(labels)
+                    digits = ""
+            elif b"0" <= key <= b"9":
+                digits += key.decode("ascii")
+            elif key in (b"\x7f", b"\x08"):
+                digits = digits[:-1]
+    finally:
+        termios.tcsetattr(descriptor, termios.TCSADRAIN, original)
+        print(file=sys.stderr)
+
+
 def resolve_settings(repo, base, branch, config_path):
     repos = load_repos(config_path)
     if not repo:
         if repos:
-            entries = list(repos)
-            print("Saved repositories:", file=sys.stderr)
-            for index, path in enumerate(entries, 1):
-                print(f"  {index}) {path} (base: {repos[path]})", file=sys.stderr)
-            print("  0) Add a new repository", file=sys.stderr)
-            while True:
-                choice = prompt("Choose a repository: ")
-                if choice == "0":
-                    break
-                if choice.isascii() and choice.isdecimal() and 1 <= int(choice) <= len(entries):
-                    repo = entries[int(choice) - 1]
-                    break
-                print("Choose a listed repository number or 0.", file=sys.stderr)
+            repo = choose_repo(repos)
         if not repo:
             repo = prompt("Repository path: ")
 
