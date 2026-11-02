@@ -9,6 +9,7 @@ usage() {
   echo "Missing values are prompted for. Repositories and their base branches are saved"
   echo "in \${XDG_CONFIG_HOME:-\$HOME/.config}/generate-pull-request-description/repos.json."
   echo "Use --base to update a repository's saved base branch."
+  echo "At the branch prompt, Enter uses the repository's current branch."
   echo "Examples:"
   echo "  ./describe.sh --branch chore/PAY-8073 --repo /Users/philipvella/work/BFF"
   echo "  ./describe.sh --repo /Users/philipvella/work/BFF --model gpt-4o-mini --branch chore/PAY-8073"

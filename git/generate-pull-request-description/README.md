@@ -11,6 +11,12 @@ and branch to describe. The repository and base are saved locally. Later runs
 show a numbered repository menu; choose a saved repository and enter the branch
 to describe, or choose `0` to add another repository.
 
+The branch prompt dynamically shows the selected repository's current active
+branch. Press **Enter** without typing to use it, or type another branch.
+This uses the selected repository's checkout, not
+the directory you launched the script from. With a detached HEAD, you must enter
+a branch explicitly.
+
 You can also supply any or all values by name, in any order:
 
 ```bash

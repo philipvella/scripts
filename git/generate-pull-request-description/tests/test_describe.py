@@ -108,6 +108,45 @@ class DescribeTests(unittest.TestCase):
             self.run_script(input="2\nchore/A20-195\n"), repo=second
         )
 
+    def test_blank_branch_uses_selected_repos_current_branch(self):
+        self.assert_generated(self.run_script(input=f"{self.repo}\nmain\n\n"))
+        self.assert_generated(self.run_script(input="1\n\n"))
+        self.git(self.repo, "checkout", "-qb", "chore/A20-196")
+        result = self.run_script("--repo", self.repo, input="\n")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["ticket"], "A20-196")
+        self.assertIn("Branch to describe [chore/A20-196]", result.stderr)
+
+    def test_detached_head_requires_explicit_branch(self):
+        self.git(self.repo, "checkout", "-q", "--detach")
+        result = self.run_script(
+            "--repo", self.repo, "--base", "main", input="\nchore/A20-195\n"
+        )
+        self.assert_generated(result)
+        self.assertIn("detached HEAD", result.stderr)
+        self.assertIn("A value is required.", result.stderr)
+        result = self.run_script("--repo", self.repo)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Input ended.", result.stderr)
+        self.assert_generated(self.run_script(
+            "--repo", self.repo, "--branch", "chore/A20-195"
+        ))
+
+    def test_branch_eof_does_not_accept_default(self):
+        result = self.run_script("--repo", self.repo, "--base", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Input ended.", result.stderr)
+        self.assertFalse(self.config.exists())
+
+    def test_typed_or_explicit_branch_overrides_current_branch(self):
+        self.git(self.repo, "checkout", "-q", "main")
+        self.assert_generated(self.run_script(
+            "--repo", self.repo, "--base", "main", input="chore/A20-195\n"
+        ))
+        self.assert_generated(self.run_script(
+            "--repo", self.repo, "--branch", "chore/A20-195"
+        ))
+
     def test_all_named_option_orders_and_model(self):
         pairs = [
             ("--repo", self.repo), ("--base", "main"),

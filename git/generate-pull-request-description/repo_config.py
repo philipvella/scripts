@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 
-def prompt(label):
+def prompt(label, default=""):
     while True:
         print(label, end="", file=sys.stderr, flush=True)
         value = sys.stdin.readline()
@@ -16,8 +16,8 @@ def prompt(label):
                 "Input ended. Supply --repo, --base and --branch for unattended use."
             )
         value = value.strip()
-        if value:
-            return value
+        if value or default:
+            return value or default
         print("A value is required.", file=sys.stderr)
 
 
@@ -58,6 +58,25 @@ def git(repo, *args):
     ).stdout.strip()
 
 
+def prompt_branch(repo):
+    result = subprocess.run(
+        ["git", "-C", repo, "symbolic-ref", "--quiet", "--short", "HEAD"],
+        text=True, capture_output=True,
+    )
+    if result.returncode not in (0, 1):
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, stderr=result.stderr
+        )
+    current = result.stdout.strip()
+    if not current:
+        print("Repository has a detached HEAD; enter a branch explicitly.", file=sys.stderr)
+        return prompt("Branch to describe: ")
+
+    return prompt(
+        f"Branch to describe [{current}] (Enter to use current): ", default=current
+    )
+
+
 def resolve_settings(repo, base, branch, config_path):
     repos = load_repos(config_path)
     if not repo:
@@ -81,7 +100,7 @@ def resolve_settings(repo, base, branch, config_path):
     repo = str(Path(repo).expanduser().resolve())
     repo = git(repo, "rev-parse", "--show-toplevel")
     base = base or repos.get(repo) or prompt("Base branch (e.g. origin/main): ")
-    branch = branch or prompt("Branch to describe: ")
+    branch = branch or prompt_branch(repo)
     if any("\n" in value or "\r" in value for value in (repo, base, branch)):
         raise ValueError("Repository path and branch names must not contain newlines.")
     for ref in (base, branch):
