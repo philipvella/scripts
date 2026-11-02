@@ -129,12 +129,13 @@ class DescribeTests(unittest.TestCase):
                 if select.select([master], [], [], 0.1)[0]:
                     captured += os.read(master, 4096)
             os.write(master, keys)
-            try:
-                stdout, _ = process.communicate(timeout=10)
-            except subprocess.TimeoutExpired:
-                while select.select([master], [], [], 0)[0]:
+            deadline = time.monotonic() + 10
+            while process.poll() is None:
+                if select.select([master], [], [], 0.1)[0]:
                     captured += os.read(master, 4096)
-                self.fail(f"Menu did not finish: {captured!r}")
+                if time.monotonic() >= deadline:
+                    self.fail(f"Menu did not finish: {captured!r}")
+            stdout, _ = process.communicate(timeout=1)
             self.assertEqual(
                 termios.tcgetattr(slave)[3] & (termios.ICANON | termios.ECHO),
                 original[3] & (termios.ICANON | termios.ECHO),
